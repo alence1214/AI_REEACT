@@ -7,6 +7,7 @@ from database import get_db
 from tools import get_user_id, get_google_search_analysis, send_email
 
 from .repository import UserRepo
+from app.websocket.ws import connected_clients
 from app.auth.auth_bearer import JWTBearer, UserRoleBearer
 from app.auth.auth_handler import signJWT, generateJWT, decode_token
 from app.alert.repository import AlertSettingRepo
@@ -100,7 +101,7 @@ async def get_statistics(db: Session=Depends(get_db)):
     turnover_data = await InvoiceRepo.get_daily_turnover_data(db)
     intervention_data = await InterventionRepo.get_daily_intervention_data(db)
     statistics_data = {
-        "total_account": total_account,
+        "total_account": len(connected_clients),
         "cur_month_acc": cur_month_acc,
         "pre_month_acc": pre_month_acc,
         "acc_count": acc_count,
