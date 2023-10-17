@@ -1,0 +1,28 @@
+{
+  "files": {
+    "main.css": "/static/css/main.3928648a.css",
+    "main.js": "/static/js/main.aef9f932.js",
+    "static/media/logoblue.png": "/static/media/logoblue.3952f1ecc1358d7c33db.png",
+    "static/media/men.png": "/static/media/men.3bf7425cddccdf160397.png",
+    "static/media/logowhite.png": "/static/media/logowhite.2fa4daeea11d47d9b24f.png",
+    "static/media/card.svg": "/static/media/card.007862c43fd391d01e1162ad42bf169c.svg",
+    "static/media/ee-bleu.png": "/static/media/ee-bleu.4be222bb63528d2e3d82.png",
+    "static/media/stripe logo.svg": "/static/media/stripe logo.34d5ee3fb12298d54199b7e90945e292.svg",
+    "static/media/google.svg": "/static/media/google.13e12fe893d3937f7dd71e7616aeb0c8.svg",
+    "index.html": "/index.html",
+    "static/media/visa_logo.svg": "/static/media/visa_logo.12695ccab1faf5967a50c49c6808c1a3.svg",
+    "static/media/visalogo.svg": "/static/media/visalogo.6bff4e9f9f62c79f1d7a89246012edc2.svg",
+    "static/media/logo-google.svg": "/static/media/logo-google.2dc1de2247aea5695cdc84bf7fa074d8.svg",
+    "static/media/Plus.svg": "/static/media/Plus.edfa82081dd6fc3080ca9fd15568b9fb.svg",
+    "static/media/graph2.svg": "/static/media/graph2.cb6c50b7b3339d5ce17a39f31c1aeb2c.svg",
+    "static/media/graph1.svg": "/static/media/graph1.3575841ab0ad3e33d3b021dd8284cb2c.svg",
+    "static/media/graph.svg": "/static/media/graph.b42f92efe2dbc0dd99239733d9db006a.svg",
+    "static/media/02.svg": "/static/media/02.a937aefffaade63c6c79391e3cc47147.svg",
+    "main.3928648a.css.map": "/static/css/main.3928648a.css.map",
+    "main.aef9f932.js.map": "/static/js/main.aef9f932.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3928648a.css",
+    "static/js/main.aef9f932.js"
+  ]
+}

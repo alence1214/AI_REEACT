@@ -1,0 +1,182 @@
+from fastapi import APIRouter, Request, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from database import get_db
+from tools import get_user_id, check_user_role
+
+from .repository import InterventionRepo
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer
+from app.intervention_response.repository import InterventionResponseRepo
+from app.invoice.repository import InvoiceRepo
+from app.stripe_manager.stripe_manager import StripeManager
+from app.user.repository import UserRepo
+
+
+router = APIRouter()
+
+@router.get("/admin/interventions", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
+async def get_all_interventions(db: Session=Depends(get_db)):
+    result = await InterventionRepo.get_all_interventions(db)
+    invoice_count = await InvoiceRepo.get_all_count(db)
+    paid_invoice_count = await InvoiceRepo.get_paid_count(db)
+    return {
+        "invoice_count": invoice_count,
+        "paid_invoice_count": paid_invoice_count,
+        "interventions": result
+    }
+    
+@router.get("/admin/interventions/{req_type}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
+async def get_all_interventions(req_type: str, db: Session=Depends(get_db)):
+    result = None
+    if req_type == "today":
+        result = await InterventionRepo.get_daily_intervention_data(db)
+    elif req_type == "weekly":
+        result = await InterventionRepo.get_weekly_intervention_data(db)
+    elif req_type == "monthly":
+        result = await InterventionRepo.get_monthly_intervention_data(db)
+    
+    if result == False:
+        raise HTTPException(status_code=403, detail="Intervention DB error.")
+    
+    return result
+        
+
+@router.get("/admin/intervention/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
+async def get_intervention_by_id(intervention_id: int, db: Session=Depends(get_db)):
+    result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
+    if result == False:
+        raise HTTPException(status_code=403, detail="Database Error.")
+    return result
+
+@router.post("/admin/intervention/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
+async def post_intervention_response(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(user_request)
+    res_data = await user_request.json()
+    if res_data["response_type"] == 0:
+        user_role = check_user_role(user_request)
+        
+        inter_response_data = {
+            "requested_id": intervention_id,
+            "response_type": res_data["response_type"],
+            "response": res_data["information"],
+            "respond_to": 0
+        }
+        inter_response_create = await InterventionResponseRepo.create(db, inter_response_data)
+        await InterventionRepo.update_datetime(db, intervention_id)
+        return inter_response_create
+    
+    elif res_data["response_type"] == 1:
+        amount = res_data["amount"]
+        description = res_data["description"]
+        requested_user_id = await InterventionRepo.get_user_id(db, intervention_id)
+        subscription_id = await UserRepo.get_subscription_id(db, requested_user_id)
+        customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
+        invoice_id = await StripeManager.create_invoice(customer_id, amount, description)
+        invoice_data = await StripeManager.create_invoice_data_from_invoice_id(invoice_id, requested_user_id)
+        new_invoice = await InvoiceRepo.create(db, invoice_data)
+        if subscription_id == None or customer_id == None or invoice_id == None or invoice_data == None or new_invoice == False:
+            raise HTTPException(status_code=403, detail="Error")
+        
+        updated_inter = await InterventionRepo.update_status(db, intervention_id, 2)
+        inter_response_data = {
+            "requested_id": intervention_id,
+            "response_type": 1,
+            "response": '{"quote":'+ str(new_invoice.id) +'}',
+            "respond_to": 0
+        }
+        inter_res = await InterventionResponseRepo.create(db, inter_response_data)
+        return new_invoice
+
+    elif res_data["response_type"] == 2:
+        result = await InterventionRepo.reject_intervention(db, intervention_id)
+        return result
+
+@router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(user_request)
+    result = await InterventionRepo.get_daily_intervention_data_by_user_id(db, user_id)
+    
+    return {
+        "intervention_requests": result
+    }
+
+@router.get("/intervention_requests/{req_type}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def get_interventions(req_type: str, user_request:Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(user_request)
+    result = await InterventionRepo.get_by_user_id(db, user_id)
+    if req_type == "today":
+        result = await InterventionRepo.get_daily_intervention_data_by_user_id(db, user_id)
+    elif req_type == "weekly":
+        result = await InterventionRepo.get_weekly_intervention_data_by_user_id(db, user_id)
+    elif req_type == "weekly":
+        result = await InterventionRepo.get_monthly_intervention_data_by_user_id(db, user_id)
+    
+    return {
+        "intervention_requests": result
+    }
+
+@router.get("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def get_intervention(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(user_request)
+    is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
+    if not is_valid_intervention_request:
+        raise HTTPException(status_code=403, detail="Invaild request!")
+    
+    result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
+    return result
+
+@router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def post_intervention_response(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(user_request)
+    is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
+    if not is_valid_intervention_request:
+        raise HTTPException(status_code=403, detail="Invaild request!")
+    
+    res_data = await user_request.json()
+    
+    user_role = check_user_role(user_request)
+    inter_response_data = {
+        "requested_id": intervention_id,
+        "response_type": res_data["response_type"],
+        "response": res_data["information"],
+        "respond_to": 1
+    }
+    inter_response_create = await InterventionResponseRepo.create(db, inter_response_data)
+    await InterventionRepo.update_datetime(db, intervention_id)
+    return inter_response_create
+
+@router.get("/intervention_requests/quote/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def get_intervention(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(user_request)
+    is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
+    if not is_valid_intervention_request:
+        raise HTTPException(status_code=403, detail="Invaild request!")
+    
+    result = await InterventionResponseRepo.get_quote_by_request_id(db, intervention_id)
+    
+    return result
+
+@router.post("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def intervention_request(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    inter_data = await request.json()
+    intervention_data = {
+        "information": inter_data["title"],
+        "additional_information": inter_data["information"][:255],
+        "site_url": inter_data["site_url"]
+    }
+    result = await InterventionRepo.create(db, intervention_data, user_id)
+    if result == False:
+        raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
+    if inter_data["additional_information"] != "":
+        
+        res_data = {
+            "requested_id": result.id,
+            "response_type": 0,
+            "response": inter_data["additional_information"],
+            "respond_to": 1
+        }
+        create_response = await InterventionResponseRepo.create(db, res_data)
+    
+        return create_response
+    return result

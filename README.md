@@ -1,2 +1,1 @@
-# AI_REEACT
-AI Reeact Python Fastapi-React Fullstack Development
+# REEACT FASTAPI based on Python
