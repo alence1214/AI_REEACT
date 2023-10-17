@@ -29,6 +29,7 @@ class UserRepo:
             user["number_siret"] = user["number_siret"] if "number_siret" in user else ""
             user["vat_number"] = user["vat_number"] if "vat_number" in user else ""
             user["activity"] = user["activity"] if "activity" in user else ""
+            user["site_internet"] = user["site_internet"] if "site_internet" in user else ""
             db_user = model.User(email=user['email'],
                                 full_name=user['full_name'], 
                                 password=hashed_password,
