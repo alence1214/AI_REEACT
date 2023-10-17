@@ -138,7 +138,7 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
         intervention_data = await InterventionRepo.get_monthly_intervention_data(db)
         
     statistics_data = {
-        "total_account": total_account,
+        "total_account": len(connected_clients),
         "cur_month_acc": cur_month_acc,
         "pre_month_acc": pre_month_acc,
         "acc_count": acc_count,
