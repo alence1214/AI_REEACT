@@ -90,10 +90,12 @@ async def update_my_user_data(user_data: userSchema.UserUpdate, request: Request
 async def get_statistics(db: Session=Depends(get_db)):
     cur_date = datetime.datetime.now()
     cur_month = cur_date.month
+    cur_year = cur_date.year
     pre_month = cur_month - 1 if cur_month != 1 else 12
+    pre_year = cur_year if cur_month != 1 else cur_year - 1
     total_account = await UserRepo.get_total_count(db)
-    cur_month_acc = await UserRepo.get_monthly_acc_count(db, cur_month)
-    pre_month_acc = await UserRepo.get_monthly_acc_count(db, pre_month)
+    cur_month_acc = await UserRepo.get_monthly_acc_count(db, cur_year, cur_month)
+    pre_month_acc = await UserRepo.get_monthly_acc_count(db, pre_year, pre_month)
     acc_count = await UserRepo.get_daily_acc_data(db)
     turnover_data = await InvoiceRepo.get_daily_turnover_data(db)
     intervention_data = await InterventionRepo.get_daily_intervention_data(db)
