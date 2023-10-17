@@ -113,10 +113,12 @@ async def get_statistics(db: Session=Depends(get_db)):
 async def get_statistics(req_type: str, db: Session=Depends(get_db)):
     cur_date = datetime.datetime.now()
     cur_month = cur_date.month
+    cur_year = cur_date.year
     pre_month = cur_month - 1 if cur_month != 1 else 12
+    pre_year = cur_year if cur_month != 1 else cur_year - 1
     total_account = await UserRepo.get_total_count(db)
-    cur_month_acc = await UserRepo.get_monthly_acc_count(db, cur_month)
-    pre_month_acc = await UserRepo.get_monthly_acc_count(db, pre_month)
+    cur_month_acc = await UserRepo.get_monthly_acc_count(db, cur_year, cur_month)
+    pre_month_acc = await UserRepo.get_monthly_acc_count(db, pre_year, pre_month)
     acc_count = None
     turnover_data = None
     intervention_data = None
