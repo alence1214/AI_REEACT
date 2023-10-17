@@ -17,11 +17,12 @@ router = APIRouter()
 @router.get("/admin/interventions", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
 async def get_all_interventions(db: Session=Depends(get_db)):
     result = await InterventionRepo.get_all_interventions(db)
-    invoice_count = await InvoiceRepo.get_all_count(db)
-    paid_invoice_count = await InvoiceRepo.get_paid_count(db)
+    interventions_in_progress = await InterventionRepo.get_all_intervention_in_progress(db)
+    pending_interventions = await InterventionRepo.get_all_intervention_in_pending(db)
     return {
-        "invoice_count": invoice_count,
-        "paid_invoice_count": paid_invoice_count,
+        "total_count": len(result),
+        "in_progress_count": len(interventions_in_progress),
+        "pending_count": len(pending_interventions),
         "interventions": result
     }
     

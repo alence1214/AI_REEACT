@@ -50,6 +50,38 @@ class InterventionRepo:
             print("Exception in InterventionRepo:", e)
             return False
     
+    async def get_all_intervention_in_progress(db: Session):
+        try:
+            result = db.query(model.InterventionRequest.id,
+                            User.full_name,
+                            model.InterventionRequest.information,
+                            model.InterventionRequest.updated_at,
+                            model.InterventionRequest.site_url,
+                            model.InterventionRequest.status).\
+                        join(User, model.InterventionRequest.user_id == User.id).\
+                        filter(model.InterventionRequest.status == 1).\
+                        order_by(model.InterventionRequest.updated_at.desc()).all()
+            return result
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
+        
+    async def get_all_intervention_in_pending(db):
+        try:
+            result = db.query(model.InterventionRequest.id,
+                            User.full_name,
+                            model.InterventionRequest.information,
+                            model.InterventionRequest.updated_at,
+                            model.InterventionRequest.site_url,
+                            model.InterventionRequest.status).\
+                        join(User, model.InterventionRequest.user_id == User.id).\
+                        filter(model.InterventionRequest.status == 2).\
+                        order_by(model.InterventionRequest.updated_at.desc()).all()
+            return result
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
+    
     async def get_user_id(db: Session, intervention_id):
         try:
             result = db.query(model.InterventionRequest).filter(model.InterventionRequest.id == intervention_id).first()
