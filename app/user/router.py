@@ -94,16 +94,17 @@ async def get_statistics(db: Session=Depends(get_db)):
     cur_year = cur_date.year
     pre_month = cur_month - 1 if cur_month != 1 else 12
     pre_year = cur_year if cur_month != 1 else cur_year - 1
-    total_account = await UserRepo.get_total_count(db)
-    cur_month_acc = await UserRepo.get_monthly_acc_count(db, cur_year, cur_month)
+    pre1_month = pre_month - 1 if pre_month != 1 else 12
+    pre1_year = pre_year if pre_month != 1 else pre_year - 1
     pre_month_acc = await UserRepo.get_monthly_acc_count(db, pre_year, pre_month)
+    pre1_month_acc = await UserRepo.get_monthly_acc_count(db, pre1_year, pre1_month)
     acc_count = await UserRepo.get_daily_acc_data(db)
     turnover_data = await InvoiceRepo.get_daily_turnover_data(db)
     intervention_data = await InterventionRepo.get_daily_intervention_data(db)
     statistics_data = {
-        "total_account": len(connected_clients),
-        "cur_month_acc": cur_month_acc,
-        "pre_month_acc": pre_month_acc,
+        "active_account": len(connected_clients),
+        "cur_month_acc": pre_month_acc,
+        "pre_month_acc": pre1_month_acc,
         "acc_count": acc_count,
         "turnover_data": turnover_data,
         "intervention_data": intervention_data
@@ -117,9 +118,10 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
     cur_year = cur_date.year
     pre_month = cur_month - 1 if cur_month != 1 else 12
     pre_year = cur_year if cur_month != 1 else cur_year - 1
-    total_account = await UserRepo.get_total_count(db)
-    cur_month_acc = await UserRepo.get_monthly_acc_count(db, cur_year, cur_month)
+    pre1_month = pre_month - 1 if pre_month != 1 else 12
+    pre1_year = pre_year if pre_month != 1 else pre_year - 1
     pre_month_acc = await UserRepo.get_monthly_acc_count(db, pre_year, pre_month)
+    pre1_month_acc = await UserRepo.get_monthly_acc_count(db, pre1_year, pre1_month)
     acc_count = None
     turnover_data = None
     intervention_data = None
@@ -138,9 +140,9 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
         intervention_data = await InterventionRepo.get_monthly_intervention_data(db)
         
     statistics_data = {
-        "total_account": len(connected_clients),
-        "cur_month_acc": cur_month_acc,
+        "active_account": len(connected_clients),
         "pre_month_acc": pre_month_acc,
+        "pre1_month_acc": pre1_month_acc,
         "acc_count": acc_count,
         "turnover_data": turnover_data,
         "intervention_data": intervention_data
