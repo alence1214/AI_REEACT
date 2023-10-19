@@ -177,8 +177,8 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
     }
     return statistics_data
 
-@router.get("/admin/turnover/download", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Statistics"])
-async def download_statistics(db: Session=Depends(get_db)):
+@router.get("/admin/turnover/download/{req_type}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Statistics"])
+async def download_statistics(req_type: str, db: Session=Depends(get_db)):
     cur_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_path = f"static/invoices/{cur_time}.xlsx"
 
