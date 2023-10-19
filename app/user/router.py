@@ -100,7 +100,11 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
 @router.get("/admin/user/{user_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "User"])
 async def get_user_by_id(user_id: int, db: Session=Depends(get_db)):
     user = await UserRepo.get_user_by_id(db, user_id)
-    return user
+    keyword_url_data = await SearchIDListRepo.get_item_by_user_id(db, user_id)
+    return {
+        "user_data": user,
+        "keyword_url_data": keyword_url_data
+    }
 
 @router.get("/admin/setting", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "User"])
 async def get_my_user_data(request: Request, db: Session=Depends(get_db)):
