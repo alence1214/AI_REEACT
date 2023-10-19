@@ -188,7 +188,7 @@ async def download_statistics(req_type: str, db: Session=Depends(get_db)):
         user_statistic = dict()
         user_statistic["Customer Name"] = user.full_name
         user_statistic["Subscription Date"] = await StripeManager.get_subscription_start_date(user.subscription_at)
-        user_statistic["Amount Pack Base"] = "29 €"
+        user_statistic["Amount Pack Base"] = "29 €" if user.subscription_at != None else ""
         additional_word = await SearchIDListRepo.get_item_by_user_id(db, user.id)
         user_statistic["Amount Additional Words"] = len(additional_word) - 1
         user_statistic["Amount Total"] = str(29 + 10 * (len(additional_word) - 1))+" €"
