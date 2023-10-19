@@ -24,9 +24,9 @@ class UserBase(BaseModel):
     subscription_at: Optional[str] = None
     subscription_expired: Optional[int] = None # 1-True 2-False
     role: Optional[int] = 2 # 1-Admin 2-User
-    avatar_url: str = None
-    user_type: str = "Particulier"
-    forgot_password_token: str = ""
+    avatar_url: Optional[str] = "static/avatar.png"
+    user_type: Optional[str] = "Particulier"
+    forgot_password_token: Optional[str] = None
     
 class UserCreate(UserBase):
     pass

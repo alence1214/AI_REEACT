@@ -263,7 +263,7 @@ class InterventionRepo:
             print("Exception in InterventionRepo:", e)
             return False
         
-    async def get_daily_intervention_data(db: Session):
+    async def get_daily_intervention_data(db: Session, inter_type: str=None):
         try:
             cur_date = datetime.date.today()
             cur_day = cur_date.day
@@ -279,13 +279,28 @@ class InterventionRepo:
                             filter(and_(extract("day", model.InterventionRequest.created_at) == cur_day,
                                         extract("month", model.InterventionRequest.created_at) == cur_month,
                                         extract("year", model.InterventionRequest.created_at) == cur_year)).\
-                            order_by(model.InterventionRequest.updated_at.desc()).all()
-            return inter_data
+                            order_by(model.InterventionRequest.updated_at.desc())
+            total_count = inter_data.count()
+            in_progress_count = inter_data.filter(model.InterventionRequest.status == 1).count()
+            pending_count = inter_data.filter(model.InterventionRequest.status == 2).count()
+            result = {
+                "total_count": total_count,
+                "in_progress_count": in_progress_count,
+                "pending_count": pending_count,
+                "inter_data": None
+            }
+            if inter_type == None or inter_type == "total_count":
+                result["inter_data"] = inter_data.all()
+            if inter_type == "in_progress_count":
+                result["inter_data"] = inter_data.filter(model.InterventionRequest.status == 1).all()
+            if inter_type == "pending_count":
+                result["inter_data"] = inter_data.filter(model.InterventionRequest.status == 2).all()
+            return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False
         
-    async def get_weekly_intervention_data(db: Session):
+    async def get_weekly_intervention_data(db: Session, inter_type: str=None):
         try:
             cur_date = datetime.date.today()
             cur_weekday = cur_date.weekday()
@@ -304,13 +319,28 @@ class InterventionRepo:
                                         extract("day", model.InterventionRequest.created_at) >= start_cur_week,
                                         extract("month", model.InterventionRequest.created_at) == cur_month,
                                         extract("year", model.InterventionRequest.created_at) == cur_year)).\
-                            order_by(model.InterventionRequest.updated_at.desc()).all()
-            return inter_data
+                            order_by(model.InterventionRequest.updated_at.desc())
+            total_count = inter_data.count()
+            in_progress_count = inter_data.filter(model.InterventionRequest.status == 1).count()
+            pending_count = inter_data.filter(model.InterventionRequest.status == 2).count()
+            result = {
+                "total_count": total_count,
+                "in_progress_count": in_progress_count,
+                "pending_count": pending_count,
+                "inter_data": None
+            }
+            if inter_type == None or inter_type == "total_count":
+                result["inter_data"] = inter_data.all()
+            if inter_type == "in_progress_count":
+                result["inter_data"] = inter_data.filter(model.InterventionRequest.status == 1).all()
+            if inter_type == "pending_count":
+                result["inter_data"] = inter_data.filter(model.InterventionRequest.status == 2).all()
+            return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False
         
-    async def get_monthly_intervention_data(db: Session):
+    async def get_monthly_intervention_data(db: Session, inter_type: str=None):
         try:
             cur_date = datetime.date.today()
             cur_month = cur_date.month
@@ -324,8 +354,23 @@ class InterventionRepo:
                             join(User, model.InterventionRequest.user_id == User.id).\
                             filter(and_(extract("month", model.InterventionRequest.created_at) == cur_month,
                                         extract("year", model.InterventionRequest.created_at) == cur_year)).\
-                            order_by(model.InterventionRequest.updated_at.desc()).all()
-            return inter_data
+                            order_by(model.InterventionRequest.updated_at.desc())
+            total_count = inter_data.count()
+            in_progress_count = inter_data.filter(model.InterventionRequest.status == 1).count()
+            pending_count = inter_data.filter(model.InterventionRequest.status == 2).count()
+            result = {
+                "total_count": total_count,
+                "in_progress_count": in_progress_count,
+                "pending_count": pending_count,
+                "inter_data": None
+            }
+            if inter_type == None or inter_type == "total_count":
+                result["inter_data"] = inter_data.all()
+            if inter_type == "in_progress_count":
+                result["inter_data"] = inter_data.filter(model.InterventionRequest.status == 1).all()
+            if inter_type == "pending_count":
+                result["inter_data"] = inter_data.filter(model.InterventionRequest.status == 2).all()
+            return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False

@@ -178,7 +178,7 @@ class StripeManager:
                 customer=customer_id,
                 items=[
                     {
-                        "price": "price_1NvBwoKUAdYp0Ip0KjJXD3yI"
+                        "price": "price_1NvCJ1KUAdYp0Ip0N5tLNP0X"
                     }
                 ],
                 payment_settings={

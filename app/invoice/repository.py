@@ -259,7 +259,7 @@ class InvoiceRepo:
             cur_month = cur_time.month
             cur_year = cur_time.year
             daily_turnover_data = []
-            for i in range(cur_day-cur_weekday, cur_day+1):
+            for i in range(cur_day-cur_weekday, cur_day-cur_weekday+7):
                 inscription = db.query(func.sum(Invoice.total_amount)).\
                                 filter(and_(extract("day", Invoice.created_at) == i,
                                             extract("month", Invoice.created_at) == cur_month,
@@ -272,7 +272,7 @@ class InvoiceRepo:
                                             Invoice.status != "Completed")).scalar()
                 daily_turnover_data.append({
                     "inscription": round(inscription, 2) if inscription is not None else 0.00,
-                    "unscription": round(unscription, 2) if unscription is not None else 0.00
+                    # "unscription": round(unscription, 2) if unscription is not None else 0.00
                 })
             return daily_turnover_data
         except Exception as e:
@@ -291,7 +291,7 @@ class InvoiceRepo:
             weeks = days // 7
             
             weekly_turnover_data = []
-            for i in range(weeks + 2):
+            for i in range(5):
                 start_date = first_day_of_month + datetime.timedelta(days=0 if i == 0 else 7 * i - week_first_day)
                 start_day = start_date.day
                 end_date = start_date + datetime.timedelta(days=6-week_first_day if i == 0 else 6)
@@ -311,7 +311,7 @@ class InvoiceRepo:
                                             Invoice.status != "Completed")).scalar()
                 weekly_turnover_data.append({
                     "inscription": round(inscription, 2) if inscription is not None else 0.00,
-                    "unscription": round(unscription, 2) if unscription is not None else 0.00
+                    # "unscription": round(unscription, 2) if unscription is not None else 0.00
                 })
             return weekly_turnover_data
         except Exception as e:
@@ -324,7 +324,7 @@ class InvoiceRepo:
             cur_month = cur_time.month
             cur_year = cur_time.year
             monthly_turnover_data = []
-            for i in range(1, cur_month + 1):
+            for i in range(1, 13):
                 inscription = db.query(func.sum(Invoice.total_amount)).\
                                 filter(and_(extract("month", Invoice.created_at) == i,
                                             extract("year", Invoice.created_at) == cur_year,
@@ -335,7 +335,7 @@ class InvoiceRepo:
                                             Invoice.status != "Completed")).scalar()
                 monthly_turnover_data.append({
                     "inscription": round(inscription, 2) if inscription is not None else 0.00,
-                    "unscription": round(unscription, 2) if unscription is not None else 0.00
+                    # "unscription": round(unscription, 2) if unscription is not None else 0.00
                 })
             return monthly_turnover_data
         except Exception as e:

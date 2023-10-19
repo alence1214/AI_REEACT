@@ -27,7 +27,7 @@ async def confirm_email(request: Request, db: Session=Depends(get_db)):
     result = await EmailVerifyRepo.create(db, emailverify)
     if result == False:
         raise HTTPException(status_code=400, detail="Email Verify Code Create Failed!")
-    return email    
+    return email
 
 @router.get("/send_verify_code/{email}", tags=["User"])
 async def send_verify_code(email: str, db: Session=Depends(get_db)):
@@ -38,10 +38,10 @@ async def send_verify_code(email: str, db: Session=Depends(get_db)):
     email_body = f"""
     <html>
         <body>
-            <p>Hi,</p>
-            <p>You are almost up to finish.</p>
-            <p>Your email verification code is: {verify_code}.</p>
-            <p>Please type code to site!</p>
+            <p>Hi!</p>
+            <p>Vous avez presque fini.</p>
+            <p>REEACT Code de validation: <strong>{verify_code}</strong>.</p>
+            <p>Entrez le code de vérification s'il vous plaît !</p>
         </body>
     </html>
     """

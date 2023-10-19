@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from tools import get_user_id, check_user_role
 
+from fastapi import Query, Path
+
 from .repository import InterventionRepo
 from app.auth.auth_bearer import JWTBearer, UserRoleBearer
 from app.intervention_response.repository import InterventionResponseRepo
@@ -25,16 +27,16 @@ async def get_all_interventions(db: Session=Depends(get_db)):
         "pending_count": len(pending_interventions),
         "interventions": result
     }
-    
+
 @router.get("/admin/interventions/{req_type}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
-async def get_all_interventions(req_type: str, db: Session=Depends(get_db)):
+async def get_all_interventions(req_type: str=Path(...), inter_type: str=Query(default=None), db: Session=Depends(get_db)):
     result = None
     if req_type == "today":
-        result = await InterventionRepo.get_daily_intervention_data(db)
+        result = await InterventionRepo.get_daily_intervention_data(db, inter_type)
     elif req_type == "weekly":
-        result = await InterventionRepo.get_weekly_intervention_data(db)
+        result = await InterventionRepo.get_weekly_intervention_data(db, inter_type)
     elif req_type == "monthly":
-        result = await InterventionRepo.get_monthly_intervention_data(db)
+        result = await InterventionRepo.get_monthly_intervention_data(db, inter_type)
     
     if result == False:
         raise HTTPException(status_code=403, detail="Intervention DB error.")

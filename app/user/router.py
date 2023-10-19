@@ -1,4 +1,5 @@
 import time, datetime
+import pandas as pd
 
 from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -84,6 +85,7 @@ async def get_my_user_data(request: Request, db: Session=Depends(get_db)):
 @router.post("/admin/setting", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "User"])
 async def update_my_user_data(user_data: userSchema.UserUpdate, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
+    user_data.role = 0
     result = await UserRepo.update_user_by_id(db, user_data, user_id)
     return result
 
@@ -149,6 +151,37 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
     }
     return statistics_data
 
+@router.get("/admin/turnover/download/{req_type}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Statistics"])
+async def download_statistics(req_type: str, db: Session=Depends(get_db)):
+    cur_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+    file_path = f"static/invoices/{cur_time}.xlsx"
+    df = None
+    if req_type == "monthly":
+        turnover_data = await InvoiceRepo.get_monthly_turnover_data(db)
+        df = pd.DataFrame(turnover_data)
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        df['month'] = months
+        df = df.rename(columns={'inscription': 'value'})
+        df = df[['month', 'value']]
+    if req_type == "weekly":
+        turnover_data = await InvoiceRepo.get_weekly_turnover_data(db)
+        df = pd.DataFrame(turnover_data)
+        weeks = ['Week1', 'Week2', 'Week3', 'Week4', 'Week5']
+        df['week'] = weeks
+        df = df.rename(columns={'inscription': 'value'})
+        df = df[['week', 'value']]
+    if req_type == "today":
+        turnover_data = await InvoiceRepo.get_daily_turnover_data(db)
+        df = pd.DataFrame(turnover_data)
+        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        df['day'] = days
+        df = df.rename(columns={'inscription': 'value'})
+        df = df[['day', 'value']]
+
+    with pd.ExcelWriter(f"static/invoices/{cur_time}.xlsx") as writer:
+        df.to_excel(writer, index=False)
+    return {"file_path": file_path}
+
 @router.post("/user/signup", tags=["User"])
 async def create_user(user_request: Request, db: Session = Depends(get_db)):
     """
@@ -192,6 +225,19 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
             raise HTTPException(status_code=403, detail="gs_result Creation is Failed!")
     
     jwt = signJWT(created_user.id, user_data['email'], created_user.role)
+    welcome_msg = f"""
+    <html>
+        <body>
+            <h2>Bonjour {created_user.full_name}</h2>
+            <p>Nous sommes ravis de vous accueillir en tant que nouvel utilisateur de la plateforme Reeact!</p>
+            <p>Nous sommes impatients de travailler avec vous et de vous offrir le meilleur service possible.</p>
+            <p>Si vous avez des questions ou des besoins spécifiques, n'hésitez pas à nous contacter.</p>
+            <p>Bonne analyse!<br/>L’équipe Reeact</p>
+            <img src="https://95.216.155.243/static/logoblue.png" alt="Reeact"></img>
+        </body>
+    </html>
+    """
+    await send_email(created_user.email, "Welcome to Reeact!", welcome_msg)
     return {
         "user": created_user,
         "jwt": jwt,

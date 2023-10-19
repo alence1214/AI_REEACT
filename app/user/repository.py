@@ -186,8 +186,7 @@ class UserRepo:
     async def get_monthly_acc_count(db: Session, year: int, month: int):
         try:
             acc_count = db.query(model.User).filter(and_(extract('month', model.User.created_at) == month,
-                                                         extract('year', model.User.created_at) == year,
-                                                         model.User.role == 2)).count()
+                                                         extract('year', model.User.created_at) == year)).count()
             return acc_count
         except Exception as e:
             print("UserRepo Exception:", e)
