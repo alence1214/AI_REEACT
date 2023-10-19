@@ -173,7 +173,9 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
         
     statistics_data = {
         "active_account": len(connected_clients),
+        "pre_month": pre_month,
         "pre_month_acc": pre_month_acc,
+        "pre1_month": pre1_month,
         "pre1_month_acc": pre1_month_acc,
         "acc_count": acc_count,
         "turnover_data": turnover_data,
