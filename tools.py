@@ -100,7 +100,10 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
             organic_results = search_result.get('organic_results')
             count = 0
             while(count < num):
-                organic_result = organic_results[count]
+                try:
+                    organic_result = organic_results[count]
+                except:
+                    break
                 googleSearchResult = {
                     "search_id": search_id,
                     "title": organic_result["title"],

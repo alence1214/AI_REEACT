@@ -54,7 +54,10 @@ class CronJob:
                 
                 count = 0
                 while(count < 50):
-                    new_organic_result = new_organic_results[count]
+                    try:
+                        new_organic_result = new_organic_results[count]
+                    except:
+                        break
                     googleSearchResult = {
                         "search_id": new_search_id,
                         "title": new_organic_result["title"],

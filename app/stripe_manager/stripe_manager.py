@@ -113,6 +113,15 @@ class StripeManager:
             print("StripeManger Exception:", e)
             return None
     
+    async def get_subscription_start_date(subscription_id: str):
+        try:
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            start_date = subscription.current_period_start
+            return start_date
+        except Exception as e:
+            print("StripeManger Exception:", e)
+            return None
+    
     async def set_default_payment_method(customer_id, payment_method_id):
         try:
             customer = stripe.Customer.modify(

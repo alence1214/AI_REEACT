@@ -73,6 +73,20 @@ class UserRepo:
         except Exception as e:
             print("UserRepo Exception:", e)
             return False
+    
+    async def get_customers(db: Session):
+        try:
+            user = db.query(model.User.id,
+                        model.User.full_name,
+                        model.User.social_reason,
+                        model.User.email,
+                        model.User.province,
+                        model.User.subscription_at).\
+                        filter(model.User.role == 2).all()
+            return user
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            return False
         
     async def get_active_users(db: Session):
         try:

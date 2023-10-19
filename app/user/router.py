@@ -69,6 +69,32 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
 
     result = await UserRepo.create(db, user_data)
     
+    payload = {
+        "user_id": result.id,
+        "email": result.email,
+        "full_name": result.full_name,
+        "time": time.time()
+    }
+    token = generateJWT(payload)
+
+    add_token = await UserRepo.add_forgot_password_token(db, result.id, token)
+    if add_token == False:
+        raise HTTPException(status_code=400, detail="Add Token Failed.")
+    
+    welcome_msg = f"""
+    <html>
+        <body>
+            <h2>Bonjour {result.email}</h2>
+            <p>Reeact vous invite à rejoindre votre interface d’analyse via le lien ci dessous :</p>
+            <p><a href="https://95.216.155.243/forgot-password?token={token}">Reset Password!</a></p>
+            <p>Voici votre identifiant de connexion :</p>
+            <p>{result.email}</p>
+            <img src="https://95.216.155.243/static/logoblue.png" alt="Reeact"></img>
+        </body>
+    </html>
+    """
+    await send_email(result.email, "Welcome to Reeact!", welcome_msg)
+    
     return result
     
 @router.get("/admin/user/{user_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "User"])
@@ -151,32 +177,26 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
     }
     return statistics_data
 
-@router.get("/admin/turnover/download/{req_type}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Statistics"])
-async def download_statistics(req_type: str, db: Session=Depends(get_db)):
+@router.get("/admin/turnover/download", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Statistics"])
+async def download_statistics(db: Session=Depends(get_db)):
     cur_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
     file_path = f"static/invoices/{cur_time}.xlsx"
-    df = None
-    if req_type == "monthly":
-        turnover_data = await InvoiceRepo.get_monthly_turnover_data(db)
-        df = pd.DataFrame(turnover_data)
-        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        df['month'] = months
-        df = df.rename(columns={'inscription': 'value'})
-        df = df[['month', 'value']]
-    if req_type == "weekly":
-        turnover_data = await InvoiceRepo.get_weekly_turnover_data(db)
-        df = pd.DataFrame(turnover_data)
-        weeks = ['Week1', 'Week2', 'Week3', 'Week4', 'Week5']
-        df['week'] = weeks
-        df = df.rename(columns={'inscription': 'value'})
-        df = df[['week', 'value']]
-    if req_type == "today":
-        turnover_data = await InvoiceRepo.get_daily_turnover_data(db)
-        df = pd.DataFrame(turnover_data)
-        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        df['day'] = days
-        df = df.rename(columns={'inscription': 'value'})
-        df = df[['day', 'value']]
+
+    user_list = await UserRepo.get_customers(db)
+    statistics_data = []
+    for user in user_list:
+        user_statistic = dict()
+        user_statistic["Customer Name"] = user.full_name
+        user_statistic["Subscription Date"] = await StripeManager.get_subscription_start_date(user.subscription_at)
+        user_statistic["Amount Pack Base"] = "29 €"
+        additional_word_count = await SearchIDListRepo.get_item_by_user_id(db, user.id)
+        user_statistic["Amount Additional Words"] = additional_word_count - 1
+        user_statistic["Amount Total"] = str(29 + 10 * (additional_word_count - 1))+" €"
+        
+        print(user_statistic)
+        statistics_data.append(user_statistic)
+        
+    df = pd.DataFrame(statistics_data)
 
     with pd.ExcelWriter(f"static/invoices/{cur_time}.xlsx") as writer:
         df.to_excel(writer, index=False)
