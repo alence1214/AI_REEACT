@@ -191,7 +191,7 @@ async def download_statistics(req_type: str, db: Session=Depends(get_db)):
         user_statistic["Amount Pack Base"] = "29 €"
         additional_word = await SearchIDListRepo.get_item_by_user_id(db, user.id)
         user_statistic["Amount Additional Words"] = len(additional_word) - 1
-        user_statistic["Amount Total"] = str(29 + 10 * ((additional_word) - 1))+" €"
+        user_statistic["Amount Total"] = str(29 + 10 * (len(additional_word) - 1))+" €"
         
         print(user_statistic)
         statistics_data.append(user_statistic)
