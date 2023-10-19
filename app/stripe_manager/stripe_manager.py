@@ -117,6 +117,8 @@ class StripeManager:
         try:
             subscription = stripe.Subscription.retrieve(subscription_id)
             start_date = subscription.current_period_start
+            start_date = datetime.datetime.fromtimestamp(start_date)
+            start_date = start_date.strftime("%y-%m-%d %H:%M:%S")
             return start_date
         except Exception as e:
             print("StripeManger Exception:", e)
