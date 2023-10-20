@@ -45,6 +45,8 @@ class CronJob:
                 new_search = GoogleSearch({
                     "q": search_id_list_item.keyword_url + " " + search_id_list_item.additional_keyword_url,
                     "serp_api_key": config('SerpAPI_Key_Google_Search'),
+                    "location": "France",
+                    "gl": "fr",
                     "start": 0,
                     "num": 100
                 })

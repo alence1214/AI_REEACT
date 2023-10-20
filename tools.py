@@ -87,7 +87,8 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
         if num:
             search = GoogleSearch({
                 "q": search_keyword,
-                "location": "Austin,Texas",
+                "location": "France",
+                "gl": "fr",
                 "serp_api_key": config('SerpAPI_Key_Google_Search'),
                 "start": start,
                 "num": 100

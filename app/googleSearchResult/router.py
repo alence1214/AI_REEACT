@@ -30,6 +30,8 @@ async def add_additional_keyword_url(request: Request, db: Session=Depends(get_d
     new_search = GoogleSearch({
         "q": keyword_url + " " +additional_keyword_url,
         "serp_api_key": config('SerpAPI_Key_Google_Search'),
+        "location": "France",
+        "gl": "fr",
         "start": 0,
         "num": 100
     })
