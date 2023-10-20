@@ -1,6 +1,5 @@
 import time, datetime
 import pandas as pd
-import calendar
 
 from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -171,12 +170,12 @@ async def get_statistics(req_type: str, db: Session=Depends(get_db)):
         acc_count = await UserRepo.get_monthly_acc_data(db)
         turnover_data = await InvoiceRepo.get_monthly_turnover_data(db)
         intervention_data = await InterventionRepo.get_monthly_intervention_data(db)
-        
+    month_name = ["Janvier", "Février", "Mars", "Avril", "Peut", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     statistics_data = {
         "active_account": len(connected_clients),
-        "pre_month": calendar.month_name[pre_month],
+        "pre_month": month_name[pre_month],
         "pre_month_acc": pre_month_acc,
-        "pre1_month": calendar.month_name[pre1_month],
+        "pre1_month": month_name[pre1_month],
         "pre1_month_acc": pre1_month_acc,
         "acc_count": acc_count,
         "turnover_data": turnover_data,
