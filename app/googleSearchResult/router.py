@@ -8,10 +8,11 @@ from database import get_db
 from tools import get_user_id, analysis_sentiment
 
 from .repository import GoogleSearchResult
-from app.auth.auth_bearer import JWTBearer
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer
 from app.sentimentResult.repository import SentimentResult
 from app.searchid_list.repository import SearchIDListRepo
 from app.alert.repository import AlertRepo
+from app.userpayment.repository import UserPaymentRepo
 
 router = APIRouter()
 
@@ -87,18 +88,20 @@ async def add_additional_keyword_url(request: Request, db: Session=Depends(get_d
 async def get_google_search_analyse(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     result = await GoogleSearchResult.get_analysis(db, user_id)
-    
+    payment_data = await UserPaymentRepo.get_payment_by_user_id(db, user_id)
     return {
-        "analyse": result
+        "analyse": result,
+        "payment_data": payment_data
     }
     
 @router.get("/google_search_analyse/{search_id}", dependencies=[Depends(JWTBearer())], tags=["GoogleSearch"])
 async def get_google_search_analyse_by_id(search_id: str, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     result = await GoogleSearchResult.get_refine_analysis(db, user_id, search_id)
-    
+    payment_data = await UserPaymentRepo.get_default_payment_by_user_id(db, user_id)
     return {
-        "analyse": result
+        "analyse": result,
+        "payment_data": payment_data
     }
     
 @router.post("/analysis_ranking", dependencies=[Depends(JWTBearer())], tags=["GoogleSearch"])
@@ -123,3 +126,28 @@ async def get_sentiment_result(page: int, limit: int, db: Session=Depends(get_db
     db_sentiment_analysis_result = await SentimentResult.get(db=db, page=page, limit=limit)
     
     return db_sentiment_analysis_result
+
+@router.get("/keyword_urls", dependencies=[Depends(JWTBearer())], tags=["GoogleSearch"])
+async def get_keyword_urls(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    keyword_urls = await SearchIDListRepo.get_item_by_user_id(db, user_id)
+    if keyword_urls == False:
+        raise HTTPException(status_code=403, detail="DB Error!")
+    return {
+        "keyword_urls": keyword_urls
+    }
+
+@router.get("/search_contents/{keyword}", dependencies=[Depends(JWTBearer())], tags=["Search Box"])
+async def search_contents(keyword: str, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    search_results = await GoogleSearchResult.search_content_by_user_id(db, user_id, keyword)
+    if search_results == False:
+        raise HTTPException(status_code=403, detail="DB Error!")
+    return search_results
+
+@router.get("/admin/search_contents/{keyword}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Search Box"])
+async def admin_search_contents(keyword: str, db: Session=Depends(get_db)):
+    search_result = await GoogleSearchResult.admin_search_content(db, keyword)
+    if search_result == False:
+        raise HTTPException(status_code=403, detail="DB Error!")
+    return search_result

@@ -82,7 +82,7 @@ async def send_email(email: str, subject: str, email_body: str):
     finally:
         server.quit()
 
-async def get_google_search_analysis(db: Session, user_id: int, search_keyword: str, start: int, num: int):
+async def get_google_search_analysis(db: Session, user_id: int, search_keyword: str, start: int, num: int, stripe_id: str=None):
     try:
         if num:
             search = GoogleSearch({
@@ -126,7 +126,8 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
             searchid_list = {
                 "user_id": user_id,
                 "search_id": search_id,
-                "keyword_url": search_keyword
+                "keyword_url": search_keyword,
+                "stripe_id": stripe_id
             }
             await SearchIDListRepo.create(db, searchid_list)
             return {

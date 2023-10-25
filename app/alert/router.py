@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -51,4 +51,13 @@ async def get_unread_counts(request: Request, db: Session=Depends(get_db)):
     return {
         "msg_unread_count": msg_unread_count,
         "alert_unread_count": alert_unread_count
+    }
+
+@router.get("/get_limit_alert", dependencies=[Depends(JWTBearer())], tags=["Alert"])
+async def get_three_alert(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    print(user_id)
+    result = await AlertRepo.get_limit_alert(db, user_id, 3)
+    return {
+        "last_three_alert": result
     }

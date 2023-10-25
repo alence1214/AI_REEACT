@@ -12,6 +12,7 @@ class SearchIDList(Base):
     additional_keyword_url = Column(String(255))
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
+    stripe_id = Column(String(100))
     
     def __repr__(self) -> str:
         return "SearchIDList"

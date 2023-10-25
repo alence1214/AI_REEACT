@@ -55,6 +55,7 @@ class MessageRepo:
             result = db.query(Messaging.id,
                               User.full_name,
                               Messaging.analysis_selection,
+                              Messaging.object_for,
                               Messaging.updated_at,
                               Messaging.user_read_status,
                               Messaging.admin_read_status).\

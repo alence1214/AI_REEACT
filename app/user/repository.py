@@ -158,8 +158,9 @@ class UserRepo:
             for var, value in vars(user).items():
                 print(var, value)
                 if (var == "password"):
-                    hashed_updated_pass = get_password_hash(value)
-                    setattr(db_user, var, hashed_updated_pass)
+                    if value != None and len(value) >= 6:
+                        hashed_updated_pass = get_password_hash(value)
+                        setattr(db_user, var, hashed_updated_pass)
                 if not (var == "password"):
                     setattr(db_user, var, value) if value else None
                     
@@ -314,6 +315,16 @@ class UserRepo:
                 update({model.User.forgot_password_token: token})
             db.commit()
             return True
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            return False
+    
+    async def unsubscribe(db: Session, user_id: int):
+        try:
+            unsubscribe = db.query(model.User).filter(model.User.id == user_id).update({model.User.subscription_at: None,
+                                                                                        model.User.subscription_expired: True})
+            db.commit()
+            return unsubscribe
         except Exception as e:
             print("UserRepo Exception:", e)
             return False

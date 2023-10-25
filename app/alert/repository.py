@@ -29,24 +29,20 @@ class AlertRepo:
             result = None
             if alert_setting.positive == True:
                 result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "positive"))
-                print(result)
             if alert_setting.negative == True:
                 negative_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "negative"))
                 if result == None:
                     result = negative_result
                 else:
                     result = result.union_all(negative_result)
-                print(result)
             if alert_setting.netural == True:
                 netural_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "neutral"))
                 if result == None:
                     result = netural_result
                 else:
                     result = result.union_all(netural_result)
-                print(result)
             if result != None:
                 result = result.order_by(Alert.created_at.desc()).all()
-            print(result)
             return result
         except Exception as e:
             print("Alert Exception", e)
@@ -93,6 +89,32 @@ class AlertRepo:
         except Exception as e:
             print("Alert Exception", e)
             return False
+        
+    async def get_limit_alert(db: Session, user_id: int, limit_cnt: int):
+        try:
+            alert_setting = await AlertSettingRepo.get_alert_setting(db, user_id)
+            result = None
+            if alert_setting.positive == True:
+                result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "positive"))
+            if alert_setting.negative == True:
+                negative_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "negative"))
+                if result == None:
+                    result = negative_result
+                else:
+                    result = result.union_all(negative_result)
+            if alert_setting.netural == True:
+                netural_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "neutral"))
+                if result == None:
+                    result = netural_result
+                else:
+                    result = result.union_all(netural_result)
+            if result != None:
+                result = result.order_by(Alert.created_at.desc()).all()
+            return result[:3]
+        except Exception as e:
+            print("Alert Exception", e)
+            return False
+            
 
 
 class AlertSettingRepo:

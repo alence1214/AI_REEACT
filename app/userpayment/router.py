@@ -42,6 +42,9 @@ async def delete_card(request: Request, db: Session=Depends(get_db)):
     check_valid = await UserPaymentRepo.check_valid_card(db, user_id, card_id)
     if check_valid == False:
         raise HTTPException(status_code=403, detail="Invalid Request.")
+    is_default = await UserPaymentRepo.is_default_card(db, user_id, card_id)
+    if is_default:
+        raise HTTPException(status_code=403, detail="Default card cannot be removed!")
     card_stripe_id = await UserPaymentRepo.get_stripe_id(db, card_id)
     if card_stripe_id == False:
         raise HTTPException(status_code=403, detail="Cannot get stripe id.")

@@ -11,6 +11,7 @@ class SearchIDListRepo:
             db_searchidlist = SearchIDList(user_id=searchid_list["user_id"],
                                         search_id=searchid_list["search_id"],
                                         keyword_url=searchid_list["keyword_url"],
+                                        stripe_id = searchid_list["stripe_id"],
                                         additional_keyword_url="",
                                         created_at=created_at)
             db.add(db_searchidlist)
@@ -21,6 +22,43 @@ class SearchIDListRepo:
             print("SearchIdListRepo Exception:", e)
             return False
         
+    async def delete(db: Session, keyword_id: int):
+        try:
+            deleted_item = db.query(SearchIDList).filter(SearchIDList.id == keyword_id).delete()
+            db.commit()
+            return deleted_item
+        except Exception as e:
+            print("SearchIdListRepo Exception:", e)
+            return False
+    
+    async def unsubscribe_item(db: Session, keyword_id: int):
+        try:
+            unsubscribe_item = db.query(SearchIDList).filter(SearchIDList.id == keyword_id).update({SearchIDList.stripe_id: None})
+            db.commit()
+            return unsubscribe_item
+        except Exception as e:
+            print("SearchIdListRepo Exception:", e)
+            return False
+    
+    async def check_valid(db: Session, user_id: int, keyword_id: int):
+        try:
+            search_item = db.query(SearchIDList).filter(and_(SearchIDList.user_id == user_id,
+                                                             SearchIDList.id == keyword_id)).first()
+            if search_item:
+                return True
+            return False
+        except Exception as e:
+            print("SearchIdListRepo Exception:", e)
+            return False
+
+    async def get_subscription_id(db: Session, keyword_id: int):
+        try:
+            keyword = db.query(SearchIDList).filter(SearchIDList.id == keyword_id).first()
+            return keyword.stripe_id
+        except Exception as e:
+            print("SearchIdListRepo Exception:", e)
+            return False
+
     async def get_search_id(db: Session, user_id: int, keyword_url: str):
         try:
             print(user_id, keyword_url)
@@ -58,7 +96,8 @@ class SearchIDListRepo:
         
     async def get_item_by_user_id(db: Session, user_id: int):
         try:
-            result = db.query(SearchIDList).filter(SearchIDList.user_id == user_id).all()
+            result = db.query(SearchIDList).filter(SearchIDList.user_id == user_id).\
+                        order_by(SearchIDList.created_at.asc()).all()
             return result
         except Exception as e:
             print("SearchIdListRepo Exception:", e)

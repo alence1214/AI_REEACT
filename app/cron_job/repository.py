@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func, extract
 from .model import CronHistory
 import datetime
 
@@ -26,4 +26,35 @@ class CronHistoryRepo:
             return result
         except Exception as e:
             print("Cron History Exception:", e)
+            return False
+    
+    async def get_reputation_score(db: Session, user_id: int):
+        try:
+            today = datetime.date.today()
+            cur_month = today.month
+            cur_year = today.year
+            pre_month = cur_month-1 if cur_month>1 else 12
+            pre_year = cur_year if cur_month>1 else cur_year-1
+            cur_month_score = db.query(CronHistory).filter(and_(CronHistory.user_id == user_id,
+                                                       extract("month", CronHistory.created_at) == cur_month,
+                                                       extract("year", CronHistory.created_at) == cur_year)).first()
+            pre_month_score = db.query(CronHistory).filter(and_(CronHistory.user_id == user_id,
+                                                       extract("month", CronHistory.created_at) == pre_month,
+                                                       extract("year", CronHistory.created_at) == pre_year)).first()
+            if not cur_month_score:
+                return {
+                    "positive_raisen": 0,
+                    "negative_raisen": 0
+                }
+            if not pre_month_score:
+                return {
+                    "positive_raisen": round(cur_month_score.positive_search_result / cur_month_score.total_search_result, 2) * 100,
+                    "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result, 2) * 100
+                }
+            return {
+                "positive_raisen": round(cur_month_score.positive_search_result / cur_month_score.total_search_result - pre_month_score.positive_search_result / pre_month_score.total_search_result, 2) * 100,
+                "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result - pre_month_score.negative_search_result / pre_month_score.total_search_result, 2) * 100
+            }
+        except Exception as e:
+            print("get_reputation_score:", e)
             return False

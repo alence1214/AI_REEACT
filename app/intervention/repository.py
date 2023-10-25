@@ -18,7 +18,7 @@ class InterventionRepo:
                                                         site_url=intervention["site_url"],
                                                         created_at=created_at,
                                                         updated_at=created_at,
-                                                        status=1)
+                                                        status=0)
             db.add(db_intervention)
             db.commit()
             db.refresh(db_intervention)
@@ -46,6 +46,25 @@ class InterventionRepo:
                         join(User, model.InterventionRequest.user_id == User.id).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
             return results
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
+        
+    async def get_inter_by_id(db: Session, inter_id: int):
+        try:
+            result = db.query(model.InterventionRequest.id,
+                            User.full_name,
+                            model.InterventionRequest.information,
+                            model.InterventionRequest.additional_information,
+                            InterventionResponse.response,
+                            model.InterventionRequest.updated_at,
+                            model.InterventionRequest.site_url,
+                            model.InterventionRequest.status).\
+                        join(User, model.InterventionRequest.user_id == User.id).\
+                        join(InterventionResponse, InterventionResponse.request_id == model.InterventionRequest.id, isouter=True).\
+                        filter(model.InterventionRequest.id == inter_id).\
+                        order_by(InterventionResponse.created_at.asc()).first()
+            return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False
@@ -116,16 +135,28 @@ class InterventionRepo:
             cur_day = cur_date.day
             cur_month = cur_date.month
             cur_year = cur_date.year
+            # interventions = db.query(model.InterventionRequest.id,
+            #                          model.InterventionRequest.information,
+            #                          model.InterventionRequest.additional_information,
+            #                          model.InterventionRequest.updated_at,
+            #                          model.InterventionRequest.site_url,
+            #                          model.InterventionRequest.status,
+            #                          SentimentResult.label).\
+            #                     join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
+            #                                                 model.InterventionRequest.site_url == GoogleSearchResult.link)).\
+            #                     join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
+            #                     filter(and_(extract("day", model.InterventionRequest.created_at) == cur_day,
+            #                                 extract("month", model.InterventionRequest.created_at) == cur_month,
+            #                                 extract("year", model.InterventionRequest.created_at) == cur_year,
+            #                                 model.InterventionRequest.user_id == user_id)).\
+            #                     order_by(model.InterventionRequest.updated_at.desc()).all()
+
             interventions = db.query(model.InterventionRequest.id,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
-                                     model.InterventionRequest.status,
-                                     SentimentResult.label).\
-                                join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
-                                                            model.InterventionRequest.site_url == GoogleSearchResult.link)).\
-                                join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
+                                     model.InterventionRequest.status).\
                                 filter(and_(extract("day", model.InterventionRequest.created_at) == cur_day,
                                             extract("month", model.InterventionRequest.created_at) == cur_month,
                                             extract("year", model.InterventionRequest.created_at) == cur_year,
@@ -144,16 +175,29 @@ class InterventionRepo:
             cur_month = cur_date.month
             cur_year = cur_date.year
             start_cur_week = cur_day - cur_weekday
+            # interventions = db.query(model.InterventionRequest.id,
+            #                          model.InterventionRequest.information,
+            #                          model.InterventionRequest.additional_information,
+            #                          model.InterventionRequest.updated_at,
+            #                          model.InterventionRequest.site_url,
+            #                          model.InterventionRequest.status,
+            #                          SentimentResult.label).\
+            #                     join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
+            #                                                 model.InterventionRequest.site_url == GoogleSearchResult.link)).\
+            #                     join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
+            #                     filter(and_(extract("day", model.InterventionRequest.created_at) <= cur_day,
+            #                                 extract("day", model.InterventionRequest.created_at) >= start_cur_week,
+            #                                 extract("month", model.InterventionRequest.created_at) == cur_month,
+            #                                 extract("year", model.InterventionRequest.created_at) == cur_year,
+            #                                 model.InterventionRequest.user_id == user_id)).\
+            #                     order_by(model.InterventionRequest.updated_at.desc()).all()
+
             interventions = db.query(model.InterventionRequest.id,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
-                                     model.InterventionRequest.status,
-                                     SentimentResult.label).\
-                                join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
-                                                            model.InterventionRequest.site_url == GoogleSearchResult.link)).\
-                                join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
+                                     model.InterventionRequest.status).\
                                 filter(and_(extract("day", model.InterventionRequest.created_at) <= cur_day,
                                             extract("day", model.InterventionRequest.created_at) >= start_cur_week,
                                             extract("month", model.InterventionRequest.created_at) == cur_month,
@@ -171,16 +215,27 @@ class InterventionRepo:
             cur_date = datetime.date.today()
             cur_month = cur_date.month
             cur_year = cur_date.year
+            # interventions = db.query(model.InterventionRequest.id,
+            #                          model.InterventionRequest.information,
+            #                          model.InterventionRequest.additional_information,
+            #                          model.InterventionRequest.updated_at,
+            #                          model.InterventionRequest.site_url,
+            #                          model.InterventionRequest.status,
+            #                          SentimentResult.label).\
+            #                     join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
+            #                                                 model.InterventionRequest.site_url == GoogleSearchResult.link)).\
+            #                     join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
+            #                     filter(and_(extract("month", model.InterventionRequest.created_at) == cur_month,
+            #                                 extract("year", model.InterventionRequest.created_at) == cur_year,
+            #                                 model.InterventionRequest.user_id == user_id)).\
+            #                     order_by(model.InterventionRequest.updated_at.desc()).all()
+            
             interventions = db.query(model.InterventionRequest.id,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
-                                     model.InterventionRequest.status,
-                                     SentimentResult.label).\
-                                join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
-                                                            model.InterventionRequest.site_url == GoogleSearchResult.link)).\
-                                join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
+                                     model.InterventionRequest.status).\
                                 filter(and_(extract("month", model.InterventionRequest.created_at) == cur_month,
                                             extract("year", model.InterventionRequest.created_at) == cur_year,
                                             model.InterventionRequest.user_id == user_id)).\
@@ -203,11 +258,12 @@ class InterventionRepo:
         
         return is_valid
     
-    async def update_datetime(db: Session, intervention_id: int):
+    async def request_approved(db: Session, intervention_id: int):
         cur_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         try:
             res = db.query(model.InterventionRequest).filter(model.InterventionRequest.id == intervention_id).\
-                update({"updated_at": cur_datetime})
+                update({"updated_at": cur_datetime,
+                        "status": 1})
             return res
         except Exception as e:
             print("Exception in InterventionRepo:", e)
@@ -272,6 +328,7 @@ class InterventionRepo:
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
                                 model.InterventionRequest.information,
+                                model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
                                 model.InterventionRequest.status).\
@@ -311,6 +368,7 @@ class InterventionRepo:
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
                                 model.InterventionRequest.information,
+                                model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
                                 model.InterventionRequest.status).\
@@ -348,6 +406,7 @@ class InterventionRepo:
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
                                 model.InterventionRequest.information,
+                                model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
                                 model.InterventionRequest.status).\

@@ -183,6 +183,15 @@ class StripeManager:
             print("StripeManger Exception:", e)
             return None
         
+    async def unsubscribe(subsctiption_id: str):
+        try:
+            subsctiption = stripe.Subscription.retrieve(subsctiption_id)
+            subsctiption.delete()
+            return subsctiption_id
+        except Exception as e:
+            print("StripeManger Exception:", e)
+            return None  
+    
     async def pay_for_new_keywordurl(customer_id: str):
         try:
             subscription = stripe.Subscription.create(

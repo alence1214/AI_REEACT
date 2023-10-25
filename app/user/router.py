@@ -263,11 +263,20 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         </body>
     </html>
     """
+    gs_statistics = await GoogleSearchResult.get_reputation_score(db, created_user.id)
+    cronhistory_data = {
+        "user_id": created_user.id,
+        "total_search_result": gs_statistics["total_count"],
+        "positive_search_result": gs_statistics["positive_count"],
+        "negative_search_result": gs_statistics["negative_count"]
+    }
+    new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
     await send_email(created_user.email, "Welcome to Reeact!", welcome_msg)
     return {
         "user": created_user,
         "jwt": jwt,
-        "gs_result": gs_result
+        "gs_result": gs_result,
+        "new_cronhistory": new_cronhistory
     }
 
 @router.post("/user/login", tags=["User"])
@@ -277,6 +286,8 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
     """
     db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
     if db_user != "User not exist" and db_user != "Password is not correct" and db_user != False:
+        if db_user.role == 2 and not db_user.subscription_at and (datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").day < datetime.date.today().day or datetime.date.today() - datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d") > datetime.timedelta(days=28)):
+            raise HTTPException(status_code=400, detail="You are not subscribed!")
         jwt = signJWT(db_user.id, db_user.email, db_user.role)
         return {
             "user": db_user,
@@ -354,14 +365,19 @@ async def get_dashboard_data(request: Request, db: Session=Depends(get_db)):
     reputation_score = await GoogleSearchResult.get_reputation_score(db, user_id)
     cron_history = await CronHistoryRepo.get_history(db, user_id)
     weekly_wallet_useage = await InvoiceRepo.get_weekly_wallet_useage(db, user_id)
+    pre_month = datetime.date.today().month - 1 if datetime.date.today().month != 1 else 12
+    pre_year = datetime.date.today().year if datetime.date.today().month != 1 else datetime.date.today().year - 1
+    pre_weekly_wallet_useage = await InvoiceRepo.get_weekly_wallet_useage(db, user_id, pre_month, pre_year)
     daily_wallet_useage = await InvoiceRepo.get_daily_wallet_useage(db, user_id)
     inter_req_data = await InterventionRepo.get_daily_intervention_data_by_user_id(db, user_id)
     default_card_data = await UserPaymentRepo.get_default_card(db, user_id)
-
+    cron_score = await CronHistoryRepo.get_reputation_score(db, user_id)
     return {
         "reputation_score": reputation_score,
         "cron_history": cron_history,
+        "cron_score": cron_score,
         "weekly_wallet_useage": weekly_wallet_useage,
+        "pre_weekly_wallet_useage": pre_weekly_wallet_useage,
         "daily_wallet_useage": daily_wallet_useage,
         "inter_req_data": inter_req_data,
         "latest_card_data": default_card_data
@@ -401,3 +417,32 @@ async def update_user(user_id: int, user_request: userSchema.UserUpdate, db: Ses
     return {
         "status": db_user
     }
+    
+@router.get("/user/unsubscribe", dependencies=[Depends(JWTBearer)], tags=["User"])
+async def unsubscribe_signup(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    subscription_id = await UserRepo.get_subscription_id(db, user_id)
+    # unsubscribe = await StripeManager.unsubscribe(subscription_id)
+    # if unsubscribe == False:
+    #     raise HTTPException(status_code=403, detail="Stripe Error!")
+    # update_user = await UserRepo.unsubscribe(db, user_id)
+    # if update_user == False:
+    #     raise HTTPException(status_code=403, detail="Database Error!")
+    return "Successfully unsubscribed!"
+
+@router.get("/user/delete_keyword/{keyword_id}", dependencies=[Depends(JWTBearer())], tags=["User"])
+async def delete_keyword_url(keyword_id: int, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    valid_keyword = await SearchIDListRepo.check_valid(db, user_id, keyword_id)
+    if valid_keyword == False:
+        raise HTTPException(status_code=403, detail="Invalid Request!")
+    subscription_id = await SearchIDListRepo.get_subscription_id(db, keyword_id)
+    if subscription_id == False or subscription_id == None:
+        raise HTTPException(status_code=403, detail="Cannot remove this keyword.")
+    unsubscribe = await StripeManager.unsubscribe(subscription_id)
+    if unsubscribe == False:
+        raise HTTPException(status_code=403, detail="Stripe Error!")
+    unsubscribe_from_db = await SearchIDListRepo.unsubscribe_item(db, keyword_id)
+    if unsubscribe_from_db == False:
+        raise HTTPException(status_code=403, detail="Database Error!")
+    return "Sucessfully removed!"

@@ -128,7 +128,7 @@ async def upload_files(request: Request):
         with open(f"{file_path}/{file.filename}", "wb") as f:
             f.write(file_contents)
 
-        upload_files.routerend({
+        upload_files.append({
             "filename": file.filename,
             "filesize": file.size,
             "filepath": f"{file_path}/{file.filename}"

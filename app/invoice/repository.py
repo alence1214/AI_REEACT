@@ -342,11 +342,11 @@ class InvoiceRepo:
             print("InvoiceRepo Exception:", e)
             return False
         
-    async def get_weekly_wallet_useage(db: Session, user_id: int):
+    async def get_weekly_wallet_useage(db: Session, user_id: int, month: int=None, year: int=None):
         try:
-            cur_date = datetime.date.today()
-            cur_month = cur_date.month
-            cur_year = cur_date.year
+            cur_date = datetime.date.today() if month == None and year == None else datetime.date(year if month<12 else year+1, month+1 if month<12 else 1, 1) - datetime.timedelta(days=1)
+            cur_month = month if month else cur_date.month
+            cur_year = year if year else cur_date.year
             cur_week = cur_date.weekday()
             first_day_of_month = datetime.date(cur_date.year, cur_date.month, 1)
             week_first_day = first_day_of_month.weekday()
@@ -354,7 +354,7 @@ class InvoiceRepo:
             weeks = days // 7
             
             weekly_wallet_useage_data = []
-            for i in range(weeks + 2):
+            for i in range(5):
                 start_date = first_day_of_month + datetime.timedelta(days=0 if i == 0 else 7 * i - week_first_day)
                 start_day = start_date.day
                 end_date = start_date + datetime.timedelta(days=6-week_first_day if i == 0 else 6)

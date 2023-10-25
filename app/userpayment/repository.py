@@ -50,6 +50,18 @@ class UserPaymentRepo:
             print("UserPaymentRepo Exception:", e)
             return False
     
+    async def is_default_card(db: Session, user_id: int, card_id: int):
+        try:
+            selection = db.query(model.UserPayment).\
+                            filter(and_(model.UserPayment.user_id == user_id,
+                                        model.UserPayment.id == card_id)).first()
+            if selection.default:
+                return True
+            return False
+        except Exception as e:
+            print("UserPaymentRepo Exception:", e)
+            return False
+    
     async def get_default_card(db: Session, user_id: int):
         try:
             card_data = db.query(model.UserPayment).filter(and_(model.UserPayment.user_id == user_id,
@@ -74,7 +86,20 @@ class UserPaymentRepo:
         except Exception as e:
             print("UserPaymentRepo Exception:", e)
             return False
-        
+    
+    async def get_default_payment_by_user_id(db: Session, user_id: int):
+        try:
+            res = db.query(model.UserPayment).filter(and_(model.UserPayment.user_id == user_id,
+                                                          model.UserPayment.default == True)).first()
+
+            res.card_number = '*' * 12 + res.card_number[-4:]
+            res.cvc = '***'
+            res.stripe_id = "unknown"
+            return res
+        except Exception as e:
+            print("UserPaymentRepo Exception:", e)
+            return False
+    
     async def set_as_default(db: Session, user_id: int, card_id: int):
         try:
             db.query(model.UserPayment).\

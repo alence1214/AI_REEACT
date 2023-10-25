@@ -28,6 +28,15 @@ async def get_all_interventions(db: Session=Depends(get_db)):
         "interventions": result
     }
 
+@router.get("/admin/intervention_request/{inter_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
+async def get_inter_request_data(inter_id: int, db: Session=Depends(get_db)):
+    inter_data = await InterventionRepo.get_inter_by_id(db, inter_id)
+    if inter_data == False or inter_data == None:
+        raise HTTPException(status_code=403, detail="Intervention DB error.")
+    return {
+        "inter_data": inter_data
+    }
+
 @router.get("/admin/interventions/{req_type}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
 async def get_all_interventions(req_type: str=Path(...), inter_type: str=Query(default=None), db: Session=Depends(get_db)):
     result = None
@@ -65,7 +74,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
             "respond_to": 0
         }
         inter_response_create = await InterventionResponseRepo.create(db, inter_response_data)
-        await InterventionRepo.update_datetime(db, intervention_id)
+        await InterventionRepo.request_approved(db, intervention_id)
         return inter_response_create
     
     elif res_data["response_type"] == 1:
@@ -111,7 +120,7 @@ async def get_interventions(req_type: str, user_request:Request, db: Session=Dep
         result = await InterventionRepo.get_daily_intervention_data_by_user_id(db, user_id)
     elif req_type == "weekly":
         result = await InterventionRepo.get_weekly_intervention_data_by_user_id(db, user_id)
-    elif req_type == "weekly":
+    elif req_type == "monthly":
         result = await InterventionRepo.get_monthly_intervention_data_by_user_id(db, user_id)
     
     return {
@@ -165,8 +174,8 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     inter_data = await request.json()
     intervention_data = {
         "information": inter_data["title"],
-        "additional_information": inter_data["information"][:255],
-        "site_url": inter_data["site_url"]
+        "additional_information": inter_data["information"],
+        "site_url": inter_data["site_url"],
     }
     result = await InterventionRepo.create(db, intervention_data, user_id)
     if result == False:

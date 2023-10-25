@@ -93,7 +93,7 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_new_keywordurl, user_id)
     result = await InvoiceRepo.create(db, invoice_data)
     
-    gs_result = await get_google_search_analysis(db, user_id, new_keywordurl, 0, 50)
+    gs_result = await get_google_search_analysis(db, user_id, new_keywordurl, 0, 50, subscription_for_new_keywordurl)
     
     return {
         "subscription":subscription_for_new_keywordurl,
