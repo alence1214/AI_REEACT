@@ -26,7 +26,7 @@ class CronJob:
     async def weather_task(connected_clients):
         for customer_id, customer_socket in connected_clients:
             customer_ip_address = customer_socket.client.host
-            weather_request = requests.get(f"http://api.weatherapi.com/v1/current.json?key={weather_api_key}&q={ip_address}&aqi=no")
+            weather_request = requests.get(f"http://api.weatherapi.com/v1/current.json?key={weather_api_key}&q={customer_ip_address}&aqi=no")
             if weather_request.status_code == 200:
                 weather_response = json.loads(weather_request.content)
                 await customer_socket.send_text(json.dumps(weather_response))
