@@ -28,14 +28,14 @@ class CronHistoryRepo:
             select = db.query(CronHistory).\
                 filter(and_(CronHistory.user_id == user_id,
                             extract("month", CronHistory.created_at) == cur_month,
-                            extract("year", CronHistory.created_at) == cur_year))
-            print(select.first())
-            select.update({CronHistory.total_search_result: cronhistory_data["total_search_result"],
+                            extract("year", CronHistory.created_at) == cur_year)).\
+                update({CronHistory.total_search_result: cronhistory_data["total_search_result"],
                         CronHistory.positive_search_result: cronhistory_data["positive_search_result"],
                         CronHistory.negative_search_result: cronhistory_data["negative_search_result"],
-                        CronHistory.created_at: created_at})
+                        CronHistory.created_at: created_at}, synchronize_session='fetch')
             db.commit()
-            return True
+            print(select)
+            return select
         except Exception as e:
             print("Cron History Exception:", e)
             return False
