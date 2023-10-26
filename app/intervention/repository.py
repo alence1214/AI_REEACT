@@ -264,6 +264,7 @@ class InterventionRepo:
             res = db.query(model.InterventionRequest).filter(model.InterventionRequest.id == intervention_id).\
                 update({"updated_at": cur_datetime,
                         "status": 1})
+            db.commit()
             return res
         except Exception as e:
             print("Exception in InterventionRepo:", e)
