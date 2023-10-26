@@ -20,6 +20,24 @@ class CronHistoryRepo:
             print("Cron History Exception:", e)
             return False
         
+    async def update(db: Session, user_id: int, cronhistory_data: dict):
+        try:
+            cur_month = datetime.datetime.today().month
+            cur_year = datetime.datetime.today().year
+            created_at = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")
+            select = db.query(CronHistory).filter(and_(CronHistory.user_id == user_id,
+                                                       extract("month", CronHistory.created_at) == cur_month,
+                                                       extract("year", CronHistory.created_at) == cur_year)).\
+                        update({CronHistory.total_search_result: cronhistory_data["total_search_result"],
+                                CronHistory.positive_search_result: cronhistory_data["positive_search_result"],
+                                CronHistory.negative_search_result: cronhistory_data["negative_search_result"],
+                                CronHistory.created_at: created_at})
+            db.commit()
+            return select
+        except Exception as e:
+            print("Cron History Exception:", e)
+            return False
+        
     async def get_history(db: Session, user_id: int):
         try:
             result = db.query(CronHistory).filter(CronHistory.user_id == user_id).limit(6).all()

@@ -15,6 +15,8 @@ from app.invoice.repository import InvoiceRepo
 from app.searchid_list.repository import SearchIDListRepo
 from app.intervention.repository import InterventionRepo
 from app.promo_code.repository import PromoCodeRepo
+from app.cron_job.repository import CronHistoryRepo
+from app.googleSearchResult.repository import GoogleSearchResult
 
 router = APIRouter()
 
@@ -94,6 +96,15 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     result = await InvoiceRepo.create(db, invoice_data)
     
     gs_result = await get_google_search_analysis(db, user_id, new_keywordurl, 0, 50, subscription_for_new_keywordurl)
+    
+    gs_statistics = await GoogleSearchResult.get_reputation_score(db, user_id)
+    cronhistory_data = {
+        "user_id": user_id,
+        "total_search_result": gs_statistics["total_count"],
+        "positive_search_result": gs_statistics["positive_count"],
+        "negative_search_result": gs_statistics["negative_count"]
+    }
+    new_cronhistory = await CronHistoryRepo.update(db, user_id, cronhistory_data)
     
     return {
         "subscription":subscription_for_new_keywordurl,
