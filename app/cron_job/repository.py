@@ -68,12 +68,12 @@ class CronHistoryRepo:
                 }
             if not pre_month_score:
                 return {
-                    "positive_raisen": round(cur_month_score.positive_search_result / cur_month_score.total_search_result, 2) * 100,
-                    "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result, 2) * 100
+                    "positive_raisen": round(cur_month_score.positive_search_result / cur_month_score.total_search_result * 100, 2),
+                    "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result * 100, 2)
                 }
             return {
-                "positive_raisen": round(cur_month_score.positive_search_result / cur_month_score.total_search_result - pre_month_score.positive_search_result / pre_month_score.total_search_result, 2) * 100,
-                "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result - pre_month_score.negative_search_result / pre_month_score.total_search_result, 2) * 100
+                "positive_raisen": round(((cur_month_score.positive_search_result / cur_month_score.total_search_result * 100) - (pre_month_score.positive_search_result / pre_month_score.total_search_result)) * 100, 2),
+                "negative_raisen": round(((cur_month_score.negative_search_result / cur_month_score.total_search_result * 100) - (pre_month_score.negative_search_result / pre_month_score.total_search_result)) * 100, 2)
             }
         except Exception as e:
             print("get_reputation_score:", e)
