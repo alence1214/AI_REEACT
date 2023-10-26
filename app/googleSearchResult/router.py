@@ -13,6 +13,7 @@ from app.sentimentResult.repository import SentimentResult
 from app.searchid_list.repository import SearchIDListRepo
 from app.alert.repository import AlertRepo
 from app.userpayment.repository import UserPaymentRepo
+from app.cron_job.repository import CronHistoryRepo
 
 router = APIRouter()
 
@@ -79,6 +80,16 @@ async def add_additional_keyword_url(request: Request, db: Session=Depends(get_d
     await SearchIDListRepo.update_search_id(db, user_id, old_search_id, new_search_id)
     await SearchIDListRepo.update_additional_keyword_url(db, user_id, new_search_id, additional_keyword_url)
     result = await GoogleSearchResult.get_refine_analysis(db, user_id, new_search_id)
+    
+    gs_statistics = await GoogleSearchResult.get_reputation_score(db, user_id)
+    cronhistory_data = {
+        "user_id": user_id,
+        "total_search_result": gs_statistics["total_count"],
+        "positive_search_result": gs_statistics["positive_count"],
+        "negative_search_result": gs_statistics["negative_count"]
+    }
+    new_cronhistory = await CronHistoryRepo.update(db, user_id, cronhistory_data)
+    
     return {
         "analyse": result
     }
