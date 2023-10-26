@@ -262,8 +262,8 @@ class InterventionRepo:
         cur_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         try:
             res = db.query(model.InterventionRequest).filter(model.InterventionRequest.id == intervention_id).\
-                update({"updated_at": cur_datetime,
-                        "status": 1})
+                update({model.InterventionRequest.updated_at: cur_datetime,
+                        model.InterventionRequest.status: 1})
             db.commit()
             return res
         except Exception as e:
