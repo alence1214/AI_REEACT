@@ -19,9 +19,9 @@ from app.auth.auth_handler import decodeJWT
 # SMTP server details
 smtp_server = "smtp.office365.com"
 smtp_port = 587
-smtp_username = "alencestinker1214@outlook.com"
+smtp_username = "honeydreamchaser@outlook.com"
 smtp_password = "Dreamchaser"
-sender_email = "alencestinker1214@outlook.com"
+sender_email = "honeydreamchaser@outlook.com"
 
 sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
 
