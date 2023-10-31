@@ -66,6 +66,9 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
         raise HTTPException(status_code=400, detail="User already exists!")
+    db_user = await UserRepo.fetch_by_username(db, username=user_data['full_name'])
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already exists!")
 
     result = await UserRepo.create(db, user_data)
     
@@ -116,6 +119,19 @@ async def get_my_user_data(request: Request, db: Session=Depends(get_db)):
 async def update_my_user_data(user_data: userSchema.UserUpdate, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     user_data.role = 0
+    token = user_data.forgot_password_token
+    origin_user_data = await UserRepo.get_user_by_id(db, user_id)
+    if origin_user_data.full_name != user_data.full_name:
+        check_username = await UserRepo.fetch_by_username(db, user_data.full_name)
+        if check_username:
+            raise HTTPException(status_code=403, detail="Username already exist.")
+    if origin_user_data.email != user_data.email:
+        check_email = await UserRepo.fetch_by_email(db, user_data.email)
+        if check_email:
+            raise HTTPException(status_code=403, detail="Email already exist.")
+        check_token = await UserRepo.check_password_forgot_token(db, token)
+        if check_token == False:
+            raise HTTPException(status_code=403, detail="Invalid Token")
     result = await UserRepo.update_user_by_id(db, user_data, user_id)
     return result
 
@@ -219,7 +235,9 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
-        raise HTTPException(status_code=400, detail="User already exists!")
+        raise HTTPException(status_code=400, detail="Email already exists!")
+    if db_user.full_name == user_data["full_name"]:
+        raise HTTPException(status_code=400, detail="Username already exists!")
     user_data["email_verified"] = False
     user_data["payment_verified"] = True
     created_user = await UserRepo.create(db=db, user=user_data)
@@ -400,6 +418,19 @@ async def get_user_profile(request: Request, db: Session=Depends(get_db)):
 @router.post("/user/setting", dependencies=[Depends(JWTBearer())], tags=["User"])
 async def update_my_user_data(user_data: userSchema.UserUpdate, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
+    token = user_data.forgot_password_token
+    origin_user_data = await UserRepo.get_user_by_id(db, user_id)
+    if origin_user_data.full_name != user_data.full_name:
+        check_username = await UserRepo.fetch_by_username(db, user_data.full_name)
+        if check_username:
+            raise HTTPException(status_code=403, detail="Username already exist.")
+    if origin_user_data.email != user_data.email:
+        check_email = await UserRepo.fetch_by_email(db, user_data.email)
+        if check_email:
+            raise HTTPException(status_code=403, detail="Email already exist.")
+        check_token = await UserRepo.check_password_forgot_token(db, token)
+        if check_token == False:
+            raise HTTPException(status_code=403, detail="Invalid Token")
     result = await UserRepo.update_user_by_id(db, user_data, user_id)
     return result
 

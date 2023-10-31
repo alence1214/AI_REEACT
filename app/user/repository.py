@@ -31,7 +31,9 @@ class UserRepo:
             user["activity"] = user["activity"] if "activity" in user else ""
             user["site_internet"] = user["site_internet"] if "site_internet" in user else ""
             db_user = model.User(email=user['email'],
-                                full_name=user['full_name'], 
+                                full_name=user['full_name'],
+                                first_name=user['first_name'],
+                                last_name=user['last_name'],
                                 password=hashed_password,
                                 social_reason=user["social_reason"],
                                 activity=user["activity"],
@@ -134,10 +136,18 @@ class UserRepo:
             print("UserRepo Exception:", e)
             return False
     
+    async def fetch_by_username(db: Session, username):
+        try:
+            return db.query(model.User).filter(model.User.full_name == username).first()
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            return False
+    
     async def fetch_by_email_password(db: Session, email, password):
         try:
             print("Received Data", email, password)
-            user = db.query(model.User).filter(model.User.email == email).first()
+            user = db.query(model.User).filter(or_(model.User.email == email,
+                                                   model.User.full_name == email)).first()
             print("Selected User:", user)
         except Exception as e:
             print("UserRepo Exception:", e)

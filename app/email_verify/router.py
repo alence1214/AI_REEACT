@@ -4,21 +4,26 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from database import get_db
-from tools import send_email
+from tools import send_email, get_user_id
 
 from .repository import EmailVerifyRepo
 from app.user.repository import UserRepo
 from app.auth.auth_handler import email_verify_JWT
+from app.auth.auth_bearer import JWTBearer
 
 router = APIRouter()
 
-@router.post("/confirm_email", tags=["User"])
-async def confirm_email(request: Request, db: Session=Depends(get_db)):
+@router.post("/confirm", tags=["User"])
+async def confirm(request: Request, db: Session=Depends(get_db)):
     req_data = await request.json()
     email = req_data["email"]
+    username = req_data["username"]
     result = await UserRepo.fetch_by_email(db, email)
     if result:
-        raise HTTPException(status_code=400, detail="User already exists!")
+        raise HTTPException(status_code=400, detail="Email already exists!")
+    result = await UserRepo.fetch_by_username(db, username)
+    if result:
+        raise HTTPException(status_code=400, detail="Username already exists!")
     verify_code = str(random.randint(100000, 999999))
     emailverify = {
         "email": email,
@@ -27,7 +32,46 @@ async def confirm_email(request: Request, db: Session=Depends(get_db)):
     result = await EmailVerifyRepo.create(db, emailverify)
     if result == False:
         raise HTTPException(status_code=400, detail="Email Verify Code Create Failed!")
+    return {
+        "email": email
+    }
+
+@router.post("/generate_code", dependencies=[Depends(JWTBearer())], tags=["User"])
+async def confirm(request: Request, db: Session=Depends(get_db)):
+    req_data = await request.json()
+    email = req_data["email"]
+    result = await UserRepo.fetch_by_email(db, email)
+    if result:
+        raise HTTPException(status_code=400, detail="Email already exists!")
+    verify_code = str(random.randint(100000, 999999))
+    emailverify = {
+        "email": email,
+        "verify_code": verify_code
+    }
+    result = await EmailVerifyRepo.create(db, emailverify)
+    if result == False:
+        raise HTTPException(status_code=400, detail="Email Verify Code Create Failed!")
+    return {
+        "email": email
+    }
+
+@router.post("/confirm_email", dependencies=[Depends(JWTBearer())], tags=["User"])
+async def confirm_email(request: Request, db: Session=Depends(get_db)):
+    req_data = await request.json()
+    email = req_data["email"]
+    result = await UserRepo.fetch_by_email(db, email)
+    if result:
+        raise HTTPException(status_code=400, detail="Email already exists!")
     return email
+
+@router.post("/confirm_username", dependencies=[Depends(JWTBearer())], tags=["User"])
+async def confirm_username(request: Request, db: Session=Depends(get_db)):
+    req_data = await request.json()
+    username = req_data["username"]
+    result = await UserRepo.fetch_by_username(db, username)
+    if result:
+        raise HTTPException(status_code=400, detail="Username already exists!")
+    return username
 
 @router.get("/send_verify_code/{email}", tags=["User"])
 async def send_verify_code(email: str, db: Session=Depends(get_db)):
@@ -62,3 +106,22 @@ async def email_verify(request: Request, db: Session=Depends(get_db)):
     
     token = email_verify_JWT(email, verify_code)
     return token
+
+@router.post("/verify_setting_code", dependencies=[Depends(JWTBearer())], tags=["User"])
+async def email_setting_verify(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    req_data = await request.json()
+    email = req_data["email"]
+    verify_code = req_data["verify_code"]
+    
+    verify_result = await EmailVerifyRepo.check_verify_code(db, email, verify_code)
+    if verify_result != True:
+        raise HTTPException(status_code=400, detail=verify_result)
+    
+    token = email_verify_JWT(email, verify_code)
+    add_token = await UserRepo.add_forgot_password_token(db, user_id, token)
+    if add_token == False:
+        raise HTTPException(status_code=400, detail="Add Token Failed.")
+    return {
+        "token": token
+    }

@@ -7,6 +7,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(80), nullable=False, unique=True, index=True)
     full_name = Column(String(80), nullable=False)
+    first_name = Column(String(80), nullable=False)
+    last_name = Column(String(80), nullable=False)
     password = Column(String(80), nullable=False)
     social_reason = Column(String(100))
     activity = Column(String(100))
