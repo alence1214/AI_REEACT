@@ -24,7 +24,7 @@ async def confirm(request: Request, db: Session=Depends(get_db)):
     result = await UserRepo.fetch_by_username(db, username)
     if result:
         raise HTTPException(status_code=400, detail="Username already exists!")
-    verify_code = str(random.randint(100000, 999999))
+    verify_code = 111111 # str(random.randint(100000, 999999))
     emailverify = {
         "email": email,
         "verify_code": verify_code
@@ -43,7 +43,7 @@ async def confirm(request: Request, db: Session=Depends(get_db)):
     result = await UserRepo.fetch_by_email(db, email)
     if result:
         raise HTTPException(status_code=400, detail="Email already exists!")
-    verify_code = str(random.randint(100000, 999999))
+    verify_code = 111111 #str(random.randint(100000, 999999))
     emailverify = {
         "email": email,
         "verify_code": verify_code
