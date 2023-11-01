@@ -174,6 +174,7 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     inter_data = await request.json()
     intervention_data = {
+        "title": inter_data["title"],
         "information": inter_data["information"],
         "additional_information": inter_data["additional_information"],
         "site_url": inter_data["site_url"],
