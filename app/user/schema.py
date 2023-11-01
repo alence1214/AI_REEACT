@@ -5,8 +5,8 @@ from pydantic import BaseModel
 class UserBase(BaseModel):
     email: Optional[EmailStr]
     full_name: Optional[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     password: Optional[str]
     social_reason: Optional[str] = None
     activity: Optional[str] = None

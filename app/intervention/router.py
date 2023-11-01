@@ -12,6 +12,7 @@ from app.intervention_response.repository import InterventionResponseRepo
 from app.invoice.repository import InvoiceRepo
 from app.stripe_manager.stripe_manager import StripeManager
 from app.user.repository import UserRepo
+from app.googleSearchResult.repository import GoogleSearchResult
 
 
 router = APIRouter()
@@ -177,9 +178,13 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
         "additional_information": inter_data["information"],
         "site_url": inter_data["site_url"],
     }
+    check_request_status = await GoogleSearchResult.check_request_status(db, inter_data["title"], inter_data["site_url"])
+    if check_request_status == False:
+        raise HTTPException(status_code=403, detail="Request already sent!")
     result = await InterventionRepo.create(db, intervention_data, user_id)
     if result == False:
         raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
+    request_status = await GoogleSearchResult.update_request_status(db, inter_data["title"], inter_data["site_url"], True)
     if inter_data["additional_information"] != "":
         
         res_data = {

@@ -64,16 +64,19 @@ class CronHistoryRepo:
             if not cur_month_score:
                 return {
                     "positive_raisen": 0,
-                    "negative_raisen": 0
+                    "negative_raisen": 0,
+                    "general_raisen": 0
                 }
             if not pre_month_score:
                 return {
                     "positive_raisen": round(cur_month_score.positive_search_result / cur_month_score.total_search_result * 100, 2),
-                    "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result * 100, 2)
+                    "negative_raisen": round(cur_month_score.negative_search_result / cur_month_score.total_search_result * 100, 2),
+                    "general_raisen": round((cur_month_score.total_search_result-cur_month_score.negative_search_result) / cur_month_score.total_search_result * 100, 2)
                 }
             return {
-                "positive_raisen": round(((cur_month_score.positive_search_result / cur_month_score.total_search_result * 100) - (pre_month_score.positive_search_result / pre_month_score.total_search_result)) * 100, 2),
-                "negative_raisen": round(((cur_month_score.negative_search_result / cur_month_score.total_search_result * 100) - (pre_month_score.negative_search_result / pre_month_score.total_search_result)) * 100, 2)
+                "positive_raisen": round(((cur_month_score.positive_search_result / cur_month_score.total_search_result * 100) - (pre_month_score.positive_search_result / pre_month_score.total_search_result * 100)), 2),
+                "negative_raisen": round(((cur_month_score.negative_search_result / cur_month_score.total_search_result * 100) - (pre_month_score.negative_search_result / pre_month_score.total_search_result * 100)), 2),
+                "general_raisen": round(((cur_month_score.total_search_result-cur_month_score.negative_search_result) / cur_month_score.total_search_result * 100) - ((pre_month_score.total_search_result-pre_month_score.negative_search_result) / pre_month_score.total_search_result * 100), 2)
             }
         except Exception as e:
             print("get_reputation_score:", e)

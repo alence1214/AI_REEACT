@@ -1,4 +1,4 @@
-from sqlalchemy import text
+from sqlalchemy import text, case, literal
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from . import model, schema
@@ -33,7 +33,8 @@ class GoogleSearchResult:
                                                                 link=googleSearchResult['link'], 
                                                                 snippet=googleSearchResult['snippet'], 
                                                                 created_at=created_at,
-                                                                ranking=googleSearchResult['ranking'])
+                                                                ranking=googleSearchResult['ranking'],
+                                                                request_status=False)
                 db.add(db_googleSearchResult)
                 db.commit()
                 db.refresh(db_googleSearchResult)
@@ -45,6 +46,7 @@ class GoogleSearchResult:
             setattr(db_google_search_result, 'link', googleSearchResult['link'])
             setattr(db_google_search_result, 'snippet', googleSearchResult['snippet'])
             setattr(db_google_search_result, 'ranking', googleSearchResult['ranking'])
+            setattr(db_google_search_result, 'request_status', False)
             
             db_google_search_result.updated_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             print(db_google_search_result.id)
@@ -99,6 +101,16 @@ class GoogleSearchResult:
         
     async def get_refine_analysis(db: Session, user_id: int, search_id: str):
         try:
+            # Define your custom sort order
+            custom_order = ["negative", "neutral", "positive"]
+
+            # Create a case statement to map the custom order to the column values
+            custom_sort = case(
+                [
+                    (literal(value), order) for order, value in enumerate(custom_order)
+                ],
+                else_=len(custom_order)
+            )
             result = db.query(model.GoogleSearchResult.id,
                             model.GoogleSearchResult.search_id,
                             model.GoogleSearchResult.title,
@@ -106,6 +118,7 @@ class GoogleSearchResult:
                             model.GoogleSearchResult.snippet,
                             model.GoogleSearchResult.created_at,
                             model.GoogleSearchResult.created_at,
+                            model.GoogleSearchResult.request_status,
                             SearchIDList.user_id,
                             SentimentResult.label,
                             SentimentResult.score,
@@ -113,7 +126,7 @@ class GoogleSearchResult:
                                 join(SearchIDList, model.GoogleSearchResult.search_id == SearchIDList.search_id).\
                                 join(SentimentResult, model.GoogleSearchResult.snippet == SentimentResult.keyword).\
                                 where(and_(SearchIDList.user_id == user_id, SearchIDList.search_id == search_id)).\
-                                order_by(model.GoogleSearchResult.ranking)
+                                order_by(SentimentResult.label)
             positive_count = result.filter(SentimentResult.label == 'positive').count()
             negative_count = result.filter(SentimentResult.label == 'negative').count()
             
@@ -341,4 +354,27 @@ class GoogleSearchResult:
             return search_results
         except Exception as e:
             print("admin_search_content", e)
+            return False
+        
+    async def update_request_status(db: Session, title: str, site_url: str, status: bool):
+        try:
+            db.query(model.GoogleSearchResult).filter(and_(model.GoogleSearchResult.title == title,
+                                                           model.GoogleSearchResult.link == site_url)).\
+                                                update({model.GoogleSearchResult.request_status: status})
+            db.commit()
+            return True
+        except Exception as e:
+            print("update_request_status", e)
+            return False
+
+    async def check_request_status(db: Session, title: str, site_url: str):
+        try:
+            result = db.query(model.GoogleSearchResult).filter(and_(model.GoogleSearchResult.title == title,
+                                                                    model.GoogleSearchResult.link == site_url)).first()
+            if result.request_status:
+                return False
+            else:
+                return True
+        except Exception as e:
+            print("check_request_status", e)
             return False

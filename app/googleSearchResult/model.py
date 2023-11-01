@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from database import Base
 
 class GoogleSearchResult(Base):
@@ -12,5 +12,6 @@ class GoogleSearchResult(Base):
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
     ranking = Column(Integer, nullable=False)
+    request_status = Column(Boolean, default=0)
     def __repr__(self):
         return 'GoogleSearchResults(search_id=%s, title=%s, link=%s, snippet=%s, created_at=%s, updated_at=%s)' % (self.search_id, self.title, self.link, self.snippet, self.created_at, self.updated_at)

@@ -67,7 +67,7 @@ class CronJob:
                         "snippet": new_organic_result["snippet"] if "snippet" in new_organic_result else "Unknown!",
                         "ranking": count
                     }
-                    new_sentiment_result = analysis_sentiment(googleSearchResult["snippet"])
+                    new_sentiment_result = analysis_sentiment(f"{googleSearchResult['title']} {googleSearchResult['snippet']}")
                     sentimentResult = {
                         "keyword": googleSearchResult["snippet"],
                         "label": new_sentiment_result["label"],

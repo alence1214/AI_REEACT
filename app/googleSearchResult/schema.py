@@ -9,3 +9,4 @@ class GoogleSearchResult(BaseModel):
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     ranking: int
+    request_status: Optional[bool] = False

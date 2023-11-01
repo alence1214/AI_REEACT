@@ -23,12 +23,14 @@ smtp_username = "honeydreamchaser@outlook.com"
 smtp_password = "Dreamchaser"
 sender_email = "honeydreamchaser@outlook.com"
 
-sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-
+# sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+sentiment_pipeline = pipeline("sentiment-analysis",
+                              model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
+                              tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
 def analysis_sentiment(text):
     data = [text]
     analysis = sentiment_pipeline(data)[0]
-    response = { "text": text, "label": analysis['label'], "score": analysis['score'] }
+    response = { "text": text, "label": analysis['label'].lower(), "score": analysis['score'] }
     
     return response
 
@@ -112,7 +114,7 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
                     "snippet": organic_result["snippet"] if "snippet" in organic_result else "Unknown!",
                     "ranking": count
                 }
-                sentiment_result = analysis_sentiment(googleSearchResult["snippet"])
+                sentiment_result = analysis_sentiment(f"{googleSearchResult['title']} {googleSearchResult['snippet']}")
                 sentimentResult = {
                     "keyword": googleSearchResult["snippet"],
                     "label": sentiment_result["label"],
