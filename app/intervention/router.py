@@ -174,26 +174,26 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     inter_data = await request.json()
     intervention_data = {
-        "information": inter_data["title"],
-        "additional_information": inter_data["information"],
+        "information": inter_data["information"],
+        "additional_information": inter_data["additional_information"],
         "site_url": inter_data["site_url"],
     }
-    check_request_status = await GoogleSearchResult.check_request_status(db, inter_data["title"], inter_data["site_url"])
+    check_request_status = await GoogleSearchResult.check_request_status(db, inter_data["id"])
     if check_request_status == False:
         raise HTTPException(status_code=403, detail="Request already sent!")
     result = await InterventionRepo.create(db, intervention_data, user_id)
     if result == False:
         raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
-    request_status = await GoogleSearchResult.update_request_status(db, inter_data["title"], inter_data["site_url"], True)
-    if inter_data["additional_information"] != "":
+    request_status = await GoogleSearchResult.update_request_status(db, inter_data["id"], True)
+    # if inter_data["additional_information"] != "":
         
-        res_data = {
-            "requested_id": result.id,
-            "response_type": 0,
-            "response": inter_data["additional_information"],
-            "respond_to": 1
-        }
-        create_response = await InterventionResponseRepo.create(db, res_data)
+    #     res_data = {
+    #         "requested_id": result.id,
+    #         "response_type": 0,
+    #         "response": inter_data["additional_information"],
+    #         "respond_to": 1
+    #     }
+    #     create_response = await InterventionResponseRepo.create(db, res_data)
     
-        return create_response
+    #     return create_response
     return result

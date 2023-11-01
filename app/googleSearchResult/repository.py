@@ -356,10 +356,9 @@ class GoogleSearchResult:
             print("admin_search_content", e)
             return False
         
-    async def update_request_status(db: Session, title: str, site_url: str, status: bool):
+    async def update_request_status(db: Session, id: int, status: bool):
         try:
-            db.query(model.GoogleSearchResult).filter(and_(model.GoogleSearchResult.title == title,
-                                                           model.GoogleSearchResult.link == site_url)).\
+            db.query(model.GoogleSearchResult).filter(model.GoogleSearchResult.id == id).\
                                                 update({model.GoogleSearchResult.request_status: status})
             db.commit()
             return True
@@ -367,10 +366,9 @@ class GoogleSearchResult:
             print("update_request_status", e)
             return False
 
-    async def check_request_status(db: Session, title: str, site_url: str):
+    async def check_request_status(db: Session, id: int):
         try:
-            result = db.query(model.GoogleSearchResult).filter(and_(model.GoogleSearchResult.title == title,
-                                                                    model.GoogleSearchResult.link == site_url)).first()
+            result = db.query(model.GoogleSearchResult).filter(model.GoogleSearchResult.id == id).first()
             if result.request_status:
                 return False
             else:
