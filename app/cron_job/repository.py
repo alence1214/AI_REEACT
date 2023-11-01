@@ -42,7 +42,10 @@ class CronHistoryRepo:
         
     async def get_history(db: Session, user_id: int):
         try:
-            result = db.query(CronHistory).filter(CronHistory.user_id == user_id).limit(6).all()
+            result = db.query(CronHistory).\
+                        filter(CronHistory.user_id == user_id).\
+                        order_by(CronHistory.created_at.asc()).\
+                        limit(6).all()
             return result
         except Exception as e:
             print("Cron History Exception:", e)
