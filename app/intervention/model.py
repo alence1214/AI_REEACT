@@ -7,6 +7,7 @@ class InterventionRequest(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey(User.id))
+    title = Column(String(255))
     information = Column(String(200), nullable=False)
     additional_information = Column(String(2000))
     site_url = Column(String(500), nullable=False)

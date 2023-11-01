@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class HandleIntervention(BaseModel):
     user_id: int
+    title: str
     information: str
     additional_information: Optional[str] = None
     site_url: str

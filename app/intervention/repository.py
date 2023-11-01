@@ -13,6 +13,7 @@ class InterventionRepo:
         try:
             created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             db_intervention = model.InterventionRequest(user_id=user_id,
+                                                        title=intervention["title"],
                                                         information=intervention["information"],
                                                         additional_information=intervention["additional_information"],
                                                         site_url=intervention["site_url"],
@@ -39,6 +40,7 @@ class InterventionRepo:
         try:
             results = db.query(model.InterventionRequest.id,
                             User.full_name,
+                            model.InterventionRequest.title,
                             model.InterventionRequest.information,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
@@ -54,6 +56,7 @@ class InterventionRepo:
         try:
             result = db.query(model.InterventionRequest.id,
                             User.full_name,
+                            model.InterventionRequest.title,
                             model.InterventionRequest.information,
                             model.InterventionRequest.additional_information,
                             InterventionResponse.response,
@@ -73,6 +76,7 @@ class InterventionRepo:
         try:
             result = db.query(model.InterventionRequest.id,
                             User.full_name,
+                            model.InterventionRequest.title,
                             model.InterventionRequest.information,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
@@ -89,6 +93,7 @@ class InterventionRepo:
         try:
             result = db.query(model.InterventionRequest.id,
                             User.full_name,
+                            model.InterventionRequest.title,
                             model.InterventionRequest.information,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
@@ -113,13 +118,14 @@ class InterventionRepo:
     async def get_by_user_id(db: Session, user_id: int):
         try:
             interventions = db.query(model.InterventionRequest.id,
+                                     model.InterventionRequest.title,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
                                      model.InterventionRequest.status,
                                      SentimentResult.label).\
-                join(GoogleSearchResult, and_(model.InterventionRequest.information == GoogleSearchResult.title, 
+                join(GoogleSearchResult, and_(model.InterventionRequest.title == GoogleSearchResult.title, 
                                               model.InterventionRequest.site_url == GoogleSearchResult.link)).\
                 join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\
                 filter(model.InterventionRequest.user_id == user_id).\
@@ -152,6 +158,7 @@ class InterventionRepo:
             #                     order_by(model.InterventionRequest.updated_at.desc()).all()
 
             interventions = db.query(model.InterventionRequest.id,
+                                     model.InterventionRequest.title,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
@@ -193,6 +200,7 @@ class InterventionRepo:
             #                     order_by(model.InterventionRequest.updated_at.desc()).all()
 
             interventions = db.query(model.InterventionRequest.id,
+                                     model.InterventionRequest.title,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
@@ -231,6 +239,7 @@ class InterventionRepo:
             #                     order_by(model.InterventionRequest.updated_at.desc()).all()
             
             interventions = db.query(model.InterventionRequest.id,
+                                     model.InterventionRequest.title,
                                      model.InterventionRequest.information,
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
@@ -328,6 +337,7 @@ class InterventionRepo:
             cur_year = cur_date.year
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
+                                model.InterventionRequest.title,
                                 model.InterventionRequest.information,
                                 model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
@@ -368,6 +378,7 @@ class InterventionRepo:
             start_cur_week = cur_day - cur_weekday
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
+                                model.InterventionRequest.title,
                                 model.InterventionRequest.information,
                                 model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
@@ -406,6 +417,7 @@ class InterventionRepo:
             cur_year = cur_date.year
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
+                                model.InterventionRequest.title,
                                 model.InterventionRequest.information,
                                 model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
@@ -439,6 +451,7 @@ class InterventionRepo:
         try:
             inter_data = db.query(model.InterventionRequest.id,
                                 User.full_name,
+                                model.InterventionRequest.title,
                                 model.InterventionRequest.information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
