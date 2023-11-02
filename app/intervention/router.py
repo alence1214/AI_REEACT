@@ -79,6 +79,9 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         return inter_response_create
     
     elif res_data["response_type"] == 1:
+        check_quote_sent = InterventionRepo.check_quote_sent(db, intervention_id)
+        if check_quote_sent == True:
+            raise HTTPException(status_code=403, detail="Quote already sent.")
         amount = res_data["amount"]
         description = res_data["description"]
         requested_user_id = await InterventionRepo.get_user_id(db, intervention_id)
