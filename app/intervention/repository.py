@@ -471,7 +471,7 @@ class InterventionRepo:
                                 filter(and_(InterventionResponse.request_id == intervention_id,
                                             InterventionResponse.response_type == 1)).first()
             print(inter_response)
-            if inter_response:
+            if inter_response == None:
                 return False
             return True
         except Exception as e:
