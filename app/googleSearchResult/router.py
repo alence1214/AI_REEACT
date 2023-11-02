@@ -110,9 +110,13 @@ async def get_google_search_analyse_by_id(search_id: str, request: Request, db: 
     user_id = get_user_id(request)
     result = await GoogleSearchResult.get_refine_analysis(db, user_id, search_id)
     payment_data = await UserPaymentRepo.get_default_payment_by_user_id(db, user_id)
+    reputation_score = await GoogleSearchResult.get_reputation_score(db, user_id)
+    cron_history = await CronHistoryRepo.get_history(db, user_id)
     return {
         "analyse": result,
-        "payment_data": payment_data
+        "payment_data": payment_data,
+        "cron_history": cron_history,
+        "reputation_score": reputation_score
     }
     
 @router.post("/analysis_ranking", dependencies=[Depends(JWTBearer())], tags=["GoogleSearch"])
