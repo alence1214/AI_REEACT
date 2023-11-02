@@ -468,7 +468,7 @@ class InterventionRepo:
     async def check_quote_sent(db: Session, intervention_id: int):
         try:
             inter_response = db.query(InterventionResponse).\
-                                filter(and_(InterventionResponse.intervention_id == intervention_id,
+                                filter(and_(InterventionResponse.request_id == intervention_id,
                                             InterventionResponse.response_type == 1)).first()
             if inter_response:
                 return False
