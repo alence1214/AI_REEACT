@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from tools import get_user_id, analysis_sentiment
+from tools import get_user_id, analysis_sentiment, remove_http
 
 from .repository import GoogleSearchResult
 from app.auth.auth_bearer import JWTBearer, UserRoleBearer

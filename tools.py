@@ -34,6 +34,14 @@ def analysis_sentiment(text):
     
     return response
 
+def remove_http(string):
+    if string.startswith("https://"):
+        return string[8:]
+    elif string.startswith("http://"):
+        return string[7:]
+    else:
+        return string
+
 def get_user_id(request: Request):
     bearer_token = request.headers["Authorization"]
     jwt_token = bearer_token[7:]
