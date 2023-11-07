@@ -476,3 +476,14 @@ class InterventionRepo:
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False
+    
+    async def update_datetime(db: Session, intervention_id: int):
+        try:
+            now = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")
+            db.query(InterventionResponse).\
+                filter(InterventionResponse.request_id == intervention_id).\
+                update({InterventionResponse.updated_at: now})
+            db.commit()
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
