@@ -265,7 +265,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     
     gs_result = None
     if user_data["keyword_url"] != '':
-        gs_result = await get_google_search_analysis(db, created_user.id, user_data["keyword_url"], 0, 50)
+        gs_result = await get_google_search_analysis(db, created_user.id, user_data["keyword_url"], 0, 100)
         if gs_result == False:
             raise HTTPException(status_code=403, detail="gs_result Creation is Failed!")
     

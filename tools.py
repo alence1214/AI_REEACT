@@ -8,31 +8,31 @@ from transformers import pipeline
 from decouple import config
 from sqlalchemy.orm import Session
 
-from app.googleSearchResult.repository import GoogleSearchResult
-from app.sentimentResult.repository import SentimentResult
-from app.searchid_list.repository import SearchIDListRepo
+# from app.googleSearchResult.repository import GoogleSearchResult
+# from app.sentimentResult.repository import SentimentResult
+# from app.searchid_list.repository import SearchIDListRepo
 
 from fastapi import Request
 
 from app.auth.auth_handler import decodeJWT
 
 # SMTP server details
-smtp_server = "smtp.office365.com"
+smtp_server = "mail.gandi.net"
 smtp_port = 587
-smtp_username = "honeydreamchaser@outlook.com"
-smtp_password = "Dreamchaser"
-sender_email = "honeydreamchaser@outlook.com"
+smtp_username = "register@reeact.io"
+smtp_password = "gandhi"
+sender_email = "register@reeact.io"
 
 # sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-sentiment_pipeline = pipeline("sentiment-analysis",
-                              model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
-                              tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
-def analysis_sentiment(text):
-    data = [text]
-    analysis = sentiment_pipeline(data)[0]
-    response = { "text": text, "label": analysis['label'].lower(), "score": analysis['score'] }
+# sentiment_pipeline = pipeline("sentiment-analysis",
+#                               model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
+#                               tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
+# def analysis_sentiment(text):
+#     data = [text]
+#     analysis = sentiment_pipeline(data)[0]
+#     response = { "text": text, "label": analysis['label'].lower(), "score": analysis['score'] }
     
-    return response
+#     return response
 
 def remove_http(string):
     if string.startswith("https://"):
@@ -72,7 +72,7 @@ def zip_files(file_paths, zip_name):
         for file in file_paths:
             zipf.write(file)
             
-async def send_email(email: str, subject: str, email_body: str):    
+def send_email(email: str, subject: str, email_body: str):    
     msg = MIMEMultipart()
     msg["From"] = sender_email
     msg["To"] = email
@@ -101,7 +101,7 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
                 "gl": "fr",
                 "serp_api_key": config('SerpAPI_Key_Google_Search'),
                 "start": start,
-                "num": 100
+                "num": 150
             })
             
             search_result = search.get_dictionary()
@@ -147,3 +147,6 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
     except Exception as e:
         print(e)
         return False
+    
+if __name__ == "__main__":
+    send_email("honeydreamchaser123@gmail.com", "Test", "Test")

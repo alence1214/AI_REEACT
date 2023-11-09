@@ -35,14 +35,14 @@ async def add_additional_keyword_url(request: Request, db: Session=Depends(get_d
         "location": "France",
         "gl": "fr",
         "start": 0,
-        "num": 100
+        "num": 150
     })
     new_search_result = new_search.get_dictionary()
     new_organic_results = new_search_result.get('organic_results')
     new_search_id = new_search_result.get("search_metadata")["id"]
     count = 0
     alert_cnt = 0
-    while(count < 50):
+    while(count < 100):
         try:
             new_organic_result = new_organic_results[count]
         except:
