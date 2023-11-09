@@ -23,7 +23,7 @@ smtp_username = "honeydreamchaser@outlook.com"
 smtp_password = "Dreamchaser"
 sender_email = "honeydreamchaser@outlook.com"
 
-sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+# sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
 sentiment_pipeline = pipeline("sentiment-analysis",
                               model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
                               tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
