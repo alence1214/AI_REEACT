@@ -1,5 +1,6 @@
 import uvicorn
 
+import app.api as app
 import app.user.model as userModel
 import app.payment.model as paymentModel
 import app.googleSearchResult.model as googleSearchResult
@@ -33,4 +34,4 @@ emailverifyModel.Base.metadata.create_all(bind=engine)
 
 
 if __name__ == "__main__":
-    uvicorn.run("app.api:app", host="0.0.0.0", port=8000, reload=True)
+    app.run()
