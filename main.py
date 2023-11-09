@@ -33,4 +33,4 @@ emailverifyModel.Base.metadata.create_all(bind=engine)
 
 
 if __name__ == "__main__":
-    uvicorn.run("app.api:app", host="0.0.0.0", port=443, ssl_keyfile="private.key", ssl_certfile="certificate.crt", reload=True)
+    uvicorn.run("app.api:app", host="0.0.0.0", port=8000, reload=True)
