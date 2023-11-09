@@ -72,7 +72,7 @@ def zip_files(file_paths, zip_name):
         for file in file_paths:
             zipf.write(file)
             
-def send_email(email: str, subject: str, email_body: str):    
+await def send_email(email: str, subject: str, email_body: str):    
     msg = MIMEMultipart()
     msg["From"] = sender_email
     msg["To"] = email
