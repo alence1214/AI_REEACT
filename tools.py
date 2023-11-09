@@ -8,31 +8,31 @@ from transformers import pipeline
 from decouple import config
 from sqlalchemy.orm import Session
 
-# from app.googleSearchResult.repository import GoogleSearchResult
-# from app.sentimentResult.repository import SentimentResult
-# from app.searchid_list.repository import SearchIDListRepo
+from app.googleSearchResult.repository import GoogleSearchResult
+from app.sentimentResult.repository import SentimentResult
+from app.searchid_list.repository import SearchIDListRepo
 
 from fastapi import Request
 
 from app.auth.auth_handler import decodeJWT
 
 # SMTP server details
-smtp_server = "mail.gandi.net"
+smtp_server = "smtp.office365.com"
 smtp_port = 587
-smtp_username = "register@reeact.io"
-smtp_password = "gandhi"
-sender_email = "register@reeact.io"
+smtp_username = "honeydreamchaser@outlook.com"
+smtp_password = "Dreamchaser"
+sender_email = "honeydreamchaser@outlook.com"
 
-# sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-# sentiment_pipeline = pipeline("sentiment-analysis",
-#                               model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
-#                               tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
-# def analysis_sentiment(text):
-#     data = [text]
-#     analysis = sentiment_pipeline(data)[0]
-#     response = { "text": text, "label": analysis['label'].lower(), "score": analysis['score'] }
+sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+sentiment_pipeline = pipeline("sentiment-analysis",
+                              model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
+                              tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
+def analysis_sentiment(text):
+    data = [text]
+    analysis = sentiment_pipeline(data)[0]
+    response = { "text": text, "label": analysis['label'].lower(), "score": analysis['score'] }
     
-#     return response
+    return response
 
 def remove_http(string):
     if string.startswith("https://"):
