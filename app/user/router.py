@@ -89,10 +89,10 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
         <body>
             <h2>Bonjour {result.email}</h2>
             <p>Reeact vous invite à rejoindre votre interface d’analyse via le lien ci dessous :</p>
-            <p><a href="https://95.216.155.243/forgot-password?token={token}">Reset Password!</a></p>
+            <p><a href="https://app.reeact.io/forgot-password?token={token}">Reset Password!</a></p>
             <p>Voici votre identifiant de connexion :</p>
             <p>{result.email}</p>
-            <img src="https://95.216.155.243/static/logoblue.png" alt="Reeact"></img>
+            <img src="https://app.reeact.io/static/logoblue.png" alt="Reeact"></img>
         </body>
     </html>
     """
@@ -278,7 +278,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
             <p>Nous sommes impatients de travailler avec vous et de vous offrir le meilleur service possible.</p>
             <p>Si vous avez des questions ou des besoins spécifiques, n'hésitez pas à nous contacter.</p>
             <p>Bonne analyse!<br/>L’équipe Reeact</p>
-            <img src="https://95.216.155.243/static/logoblue.png" alt="Reeact"></img>
+            <img src="https://app.reeact.io/static/logoblue.png" alt="Reeact"></img>
         </body>
     </html>
     """
@@ -333,7 +333,7 @@ async def password_forgot(email: str, db: Session=Depends(get_db)):
         <body>
             <p>Hi,</p>
             <p>If this request is not yours, please skip this message.</p>
-            <p>Please go to <a href="https://95.216.155.243/forgot-password?token={token}">Reset Password</a>.</p>
+            <p>Please go to <a href="https://app.reeact.io/forgot-password?token={token}">Reset Password</a>.</p>
             <p>Please type code to site!</p>
         </body>
     </html>

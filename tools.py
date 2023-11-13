@@ -17,11 +17,11 @@ from fastapi import Request
 from app.auth.auth_handler import decodeJWT
 
 # SMTP server details
-smtp_server = "smtp.office365.com"
+smtp_server = "mail.gandi.net"
 smtp_port = 587
-smtp_username = "honeydreamchaser@outlook.com"
-smtp_password = "Dreamchaser"
-sender_email = "honeydreamchaser@outlook.com"
+smtp_username = "register@reeact.io"
+smtp_password = "register@reeact.io"
+sender_email = "register@reeact.io"
 
 # sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
 sentiment_pipeline = pipeline("sentiment-analysis",
@@ -85,12 +85,11 @@ async def send_email(email: str, subject: str, email_body: str):
         server.starttls()
         server.login(smtp_username, smtp_password)
         server.sendmail(sender_email, email, msg.as_string())
+        server.quit()
         return True
     except Exception as e:
         print("Error sending email:", str(e))
         return False
-    finally:
-        server.quit()
 
 async def get_google_search_analysis(db: Session, user_id: int, search_keyword: str, start: int, num: int, stripe_id: str=None):
     try:
