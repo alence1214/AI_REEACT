@@ -1,5 +1,5 @@
 import uvicorn
-import asyncio
+import ssl
 import app.api as main_api
 import app.user.model as userModel
 import app.payment.model as paymentModel
@@ -33,5 +33,7 @@ cronjobModel.Base.metadata.create_all(bind=engine)
 emailverifyModel.Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
-    uvicorn.run("app.api:app", host="0.0.0.0", port=443, log_level="debug", ssl_certfile="certificate.crt", ssl_keyfile="private.key", workers=2, reload=False)
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.load_cert_chain(certfile="cert.pem", keyfile="privkey.pem")
+    uvicorn.run("app.api:app", host="0.0.0.0", port=443, log_level="debug", ssl_version=ssl.PROTOCOL_TLS, ssl_context=ssl_context, workers=2, reload=False)
     # uvicorn.run("app.api:app", host="127.0.0.1", port=8000, log_level="debug", workers=2, reload=False)
