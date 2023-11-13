@@ -96,7 +96,7 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
         </body>
     </html>
     """
-    await send_email(result.email, "Welcome to Reeact!", welcome_msg)
+    await send_email(result.email, "Bienvenue sur Reeact!", welcome_msg)
     
     return result
     
@@ -290,7 +290,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         "negative_search_result": gs_statistics["negative_count"]
     }
     new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
-    await send_email(created_user.email, "Welcome to Reeact!", welcome_msg)
+    await send_email(created_user.email, "Bienvenue sur Reeact!", welcome_msg)
     return {
         "user": created_user,
         "jwt": jwt,
@@ -341,7 +341,7 @@ async def password_forgot(email: str, db: Session=Depends(get_db)):
     add_token = await UserRepo.add_forgot_password_token(db, email_confirm.id, token)
     if add_token == False:
         raise HTTPException(status_code=400, detail="Add Token Failed.")
-    send_result = await send_email(email, "Reset Password!", email_body)
+    send_result = await send_email(email, "Réinitialiser le mot de passe!", email_body)
     if send_result == False:
         raise HTTPException(status_code=400, detail="Email Not Sent!")
     return "Email sent successfully!"

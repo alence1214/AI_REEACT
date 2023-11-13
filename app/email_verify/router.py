@@ -78,7 +78,7 @@ async def send_verify_code(email: str, db: Session=Depends(get_db)):
     verify_code = await EmailVerifyRepo.get_verify_code(db, email)
     if verify_code == False:
         raise HTTPException(status_code=400, detail="Email Verify Code Not Exist!")
-    subject = "Email Verification!"
+    subject = "Vérification de l'E-mail!"
     email_body = f"""
     <html>
         <body>
