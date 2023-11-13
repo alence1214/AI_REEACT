@@ -102,12 +102,12 @@ class GoogleSearchResult:
     async def get_refine_analysis(db: Session, user_id: int, search_id: str):
         try:
             # Define your custom sort order
-            custom_order = ["negative", "neutral", "positive"]
+            custom_order = ["negative", "positive", "neutral"]
 
             # Create a case statement to map the custom order to the column values
             custom_sort = case(
                 [
-                    (literal(value), order) for order, value in enumerate(custom_order)
+                    (SentimentResult.label == value, order) for order, value in enumerate(custom_order)
                 ],
                 else_=len(custom_order)
             )
@@ -126,7 +126,7 @@ class GoogleSearchResult:
                                 join(SearchIDList, model.GoogleSearchResult.search_id == SearchIDList.search_id).\
                                 join(SentimentResult, model.GoogleSearchResult.snippet == SentimentResult.keyword).\
                                 where(and_(SearchIDList.user_id == user_id, SearchIDList.search_id == search_id)).\
-                                order_by(SentimentResult.label)
+                                order_by(custom_sort)
             positive_count = result.filter(SentimentResult.label == 'positive').count()
             negative_count = result.filter(SentimentResult.label == 'negative').count()
             
