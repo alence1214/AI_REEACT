@@ -1,5 +1,5 @@
 import uvicorn
-
+import asyncio
 import app.api as main_api
 import app.user.model as userModel
 import app.payment.model as paymentModel
@@ -32,6 +32,11 @@ alertModel.Base.metadata.create_all(bind=engine)
 cronjobModel.Base.metadata.create_all(bind=engine)
 emailverifyModel.Base.metadata.create_all(bind=engine)
 
+async def run_servers():
+    await asyncio.gather(
+        uvicorn.run("app.api:app", host="0.0.0.0", port=443, log_level="debug", ssl_certfile="certificate.crt", ssl_keyfile="private.key", workers=2, reload=False),
+        uvicorn.run("app.api:app", host="127.0.0.1", port=8000, log_level="debug", workers=2, reload=False)
+    )
+
 if __name__ == "__main__":
-    # uvicorn.run("app.api:app", host="0.0.0.0", port=443, log_level="debug", ssl_certfile="certificate.crt", ssl_keyfile="private.key", workers=2, reload=False)
-    uvicorn.run("app.api:app", host="127.0.0.1", port=8000, log_level="debug", workers=2, reload=False)
+    asyncio.run(run_servers())
