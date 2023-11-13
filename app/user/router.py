@@ -454,12 +454,12 @@ async def update_user(user_id: int, user_request: userSchema.UserUpdate, db: Ses
 async def unsubscribe_signup(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     subscription_id = await UserRepo.get_subscription_id(db, user_id)
-    # unsubscribe = await StripeManager.unsubscribe(subscription_id)
-    # if unsubscribe == False:
-    #     raise HTTPException(status_code=403, detail="Stripe Error!")
-    # update_user = await UserRepo.unsubscribe(db, user_id)
-    # if update_user == False:
-    #     raise HTTPException(status_code=403, detail="Database Error!")
+    unsubscribe = await StripeManager.unsubscribe(subscription_id)
+    if unsubscribe == False:
+        raise HTTPException(status_code=403, detail="Stripe Error!")
+    update_user = await UserRepo.unsubscribe(db, user_id)
+    if update_user == False:
+        raise HTTPException(status_code=403, detail="Database Error!")
     return "Successfully unsubscribed!"
 
 @router.get("/user/delete_keyword/{keyword_id}", dependencies=[Depends(JWTBearer())], tags=["User"])
