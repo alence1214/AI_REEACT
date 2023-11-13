@@ -33,4 +33,4 @@ cronjobModel.Base.metadata.create_all(bind=engine)
 emailverifyModel.Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
-    uvicorn.run(main_api.app, host="0.0.0.0", port=443, log_level="info", ssl_certfile="certificate.crt", ssl_keyfile="private.key")
+    uvicorn.run(main_api.app, host="0.0.0.0", port=8000, log_level="debug")
