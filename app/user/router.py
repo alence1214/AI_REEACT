@@ -331,10 +331,10 @@ async def password_forgot(email: str, db: Session=Depends(get_db)):
     email_body = f"""
     <html>
         <body>
-            <p>Hi,</p>
-            <p>If this request is not yours, please skip this message.</p>
-            <p>Please go to <a href="https://app.reeact.io/forgot-password?token={token}">Reset Password</a>.</p>
-            <p>Please type code to site!</p>
+            <p>Bonjour!</p>
+            <p>Si cette demande ne vous appartient pas, veuillez ignorer ce message.</p>
+            <p>S'il vous plaît allez à <a href="https://app.reeact.io/forgot-password?token={token}">réinitialiser le mot de passe</a>.</p>
+            <p>Veuillez saisir le code du site !</p>
         </body>
     </html>
     """
