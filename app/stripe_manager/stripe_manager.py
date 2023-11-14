@@ -198,7 +198,7 @@ class StripeManager:
                 customer=customer_id,
                 items=[
                     {
-                        "price": config("price_1OCCfKEswELuAXqP6rxTPjco")
+                        "price": config("NEW_KEYWORD_URL_PRICE_ID")
                     }
                 ],
                 payment_settings={
