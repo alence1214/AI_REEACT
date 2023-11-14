@@ -169,7 +169,7 @@ class StripeManager:
                 customer=customer_id,
                 items=[
                     {
-                        "price": "price_1NuJgbKUAdYp0Ip0z0k5kAYQ"
+                        "price": config("SIGN_UP_PRICE_ID")
                     }
                 ],
                 payment_settings={
@@ -198,7 +198,7 @@ class StripeManager:
                 customer=customer_id,
                 items=[
                     {
-                        "price": "price_1NvCJ1KUAdYp0Ip0N5tLNP0X"
+                        "price": config("price_1OCCfKEswELuAXqP6rxTPjco")
                     }
                 ],
                 payment_settings={
