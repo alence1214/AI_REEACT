@@ -533,10 +533,9 @@ class InterventionRepo:
                              InterventionResponse.respond_to,
                              InterventionResponse.status).\
                         join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
-                        filter(or_(and_(model.InterventionRequest.user_id == user_id,
-                                        model.InterventionRequest.read_status == False),
-                                   and_(InterventionResponse.status == False,
-                                        InterventionResponse.respond_to == int(user_role)))).\
+                        filter(and_(model.InterventionRequest.user_id == user_id,
+                                    model.InterventionRequest.read_status == False),
+                                    InterventionResponse.respond_to == int(user_role)).\
                         count()
             return count
         except Exception as e:
