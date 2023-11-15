@@ -93,6 +93,10 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         print(alert_result)
         
         await InterventionRepo.request_approved(db, intervention_id)
+        
+        mark = await InterventionRepo.update_read_status(db, intervention_id, False, False)
+        print(mark)
+        
         return inter_response_create
     
     elif res_data["response_type"] == 1:
@@ -131,6 +135,9 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         alert_result = await AlertRepo.create(db, alert_data)
         print(alert_result)
         
+        mark = await InterventionRepo.update_read_status(db, intervention_id, False, False)
+        print(mark)
+        
         return new_invoice
 
     elif res_data["response_type"] == 2:
@@ -148,10 +155,10 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         alert_result = await AlertRepo.create(db, alert_data)
         print(alert_result)
         
+        mark = await InterventionRepo.update_read_status(db, intervention_id, False, False)
+        print(mark)
+        
         return result
-    mark = await InterventionRepo.update_read_status(db, intervention_id, False, False)
-    print(mark)
-    return mark
 
 @router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
 async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
