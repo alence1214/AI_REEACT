@@ -26,10 +26,14 @@ class InterventionResponseRepo:
     
     async def get_information_by_request_id(db: Session, request_id: int):
         try:
-            res = db.query(InterventionResponse).\
+            res = db.query(InterventionResponse.id,
+                           InterventionResponse.request_id,
+                           InterventionResponse.response,
+                           InterventionResponse.respond_to,
+                           InterventionResponse.response_type,
+                           InterventionResponse.created_at).\
                 filter(InterventionResponse.request_id == request_id).\
                 order_by(InterventionResponse.created_at).all()
-            res = dict(res)
             return res
         except Exception as e:
             print(e)
