@@ -150,6 +150,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         
         return result
     mark = await InterventionRepo.update_read_status(db, intervention_id, False, False)
+    print(mark)
     return mark
 
 @router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
@@ -221,7 +222,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
     await InterventionRepo.update_datetime(db, intervention_id)
     
     mark = await InterventionRepo.update_read_status(db, intervention_id, True, False)
-    
+    print(mark)
     return inter_response_create
 
 @router.get("/intervention_requests/quote/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
