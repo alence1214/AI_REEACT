@@ -145,7 +145,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
             "label": "Intervention"
         }
         alert_result = await AlertRepo.create(db, alert_data)
-        
+        print(alert_result)
         return result
     mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
     mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)

@@ -45,7 +45,8 @@ class InterventionRepo:
                             model.InterventionRequest.information,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
-                            model.InterventionRequest.status).\
+                            model.InterventionRequest.status,
+                            model.InterventionRequest.read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
             return results
@@ -63,7 +64,8 @@ class InterventionRepo:
                             InterventionResponse.response,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
-                            model.InterventionRequest.status).\
+                            model.InterventionRequest.status,
+                            model.InterventionRequest.read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         join(InterventionResponse, InterventionResponse.request_id == model.InterventionRequest.id, isouter=True).\
                         filter(model.InterventionRequest.id == inter_id).\
@@ -81,7 +83,8 @@ class InterventionRepo:
                             model.InterventionRequest.information,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
-                            model.InterventionRequest.status).\
+                            model.InterventionRequest.status,
+                            model.InterventionRequest.read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         filter(model.InterventionRequest.status == 1).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
@@ -98,7 +101,8 @@ class InterventionRepo:
                             model.InterventionRequest.information,
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
-                            model.InterventionRequest.status).\
+                            model.InterventionRequest.status,
+                            model.InterventionRequest.read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         filter(model.InterventionRequest.status == 2).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
@@ -125,6 +129,7 @@ class InterventionRepo:
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
                                      model.InterventionRequest.status,
+                                     model.InterventionRequest.read_status,
                                      SentimentResult.label).\
                 join(GoogleSearchResult, and_(model.InterventionRequest.title == GoogleSearchResult.title, 
                                               model.InterventionRequest.site_url == GoogleSearchResult.link)).\
@@ -164,7 +169,8 @@ class InterventionRepo:
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
-                                     model.InterventionRequest.status).\
+                                     model.InterventionRequest.status,
+                                     model.InterventionRequest.read_status).\
                                 filter(and_(extract("day", model.InterventionRequest.created_at) == cur_day,
                                             extract("month", model.InterventionRequest.created_at) == cur_month,
                                             extract("year", model.InterventionRequest.created_at) == cur_year,
@@ -206,7 +212,8 @@ class InterventionRepo:
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
-                                     model.InterventionRequest.status).\
+                                     model.InterventionRequest.status,
+                                     model.InterventionRequest.read_status).\
                                 filter(and_(extract("day", model.InterventionRequest.created_at) <= cur_day,
                                             extract("day", model.InterventionRequest.created_at) >= start_cur_week,
                                             extract("month", model.InterventionRequest.created_at) == cur_month,
@@ -245,7 +252,8 @@ class InterventionRepo:
                                      model.InterventionRequest.additional_information,
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
-                                     model.InterventionRequest.status).\
+                                     model.InterventionRequest.status,
+                                     model.InterventionRequest.read_status).\
                                 filter(and_(extract("month", model.InterventionRequest.created_at) == cur_month,
                                             extract("year", model.InterventionRequest.created_at) == cur_year,
                                             model.InterventionRequest.user_id == user_id)).\
