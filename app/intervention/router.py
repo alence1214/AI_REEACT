@@ -185,7 +185,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     
     result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
     
-    mark_as_read = await InterventionResponseRepo.update_read_status(db, intervention_id, False, True)
+    mark_as_read = await InterventionRepo.update_read_status(db, intervention_id, False, True)
     print(mark_as_read)
     return result
 
@@ -220,7 +220,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
     
     await InterventionRepo.update_datetime(db, intervention_id)
     
-    mark = InterventionRepo.update_read_status(db, intervention_id, True, False)
+    mark = await InterventionRepo.update_read_status(db, intervention_id, True, False)
     
     return inter_response_create
 
