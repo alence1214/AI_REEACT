@@ -101,8 +101,8 @@ class AlertRepo:
         
     async def get_admin_limit_alert(db: Session, limit_cnt: int):
         try:
-            result = db.query(Alert).filter(Alert.user_id == -1).order_by(Alert.created_at.desc()).limit(limit_cnt)
-            return result
+            result = db.query(Alert).filter(Alert.user_id == -1).order_by(Alert.created_at.desc()).all()
+            return result[:limit_cnt]
         except Exception as e:
             print("Alert Exception", e)
             return False
