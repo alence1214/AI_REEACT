@@ -29,6 +29,7 @@ class InterventionResponseRepo:
             res = db.query(InterventionResponse).\
                 filter(InterventionResponse.request_id == request_id).\
                 order_by(InterventionResponse.created_at).all()
+            return res
         except Exception as e:
             print(e)
             return False
