@@ -150,10 +150,6 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         print(alert_result)
         
         return result
-    mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
-    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
-    print(mark_as_read)
-    return mark_as_read
 
 @router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
 async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
@@ -190,7 +186,6 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     
     mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
     print(mark_as_read)
-    print(result)
     return result
 
 @router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
@@ -221,12 +216,8 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         "label": "Intervention"
     }
     alert_result = await AlertRepo.create(db, alert_data)
-    print(alert_result)
     
     await InterventionRepo.update_datetime(db, intervention_id)
-    
-    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
-    print(mark_as_read)
     
     return inter_response_create
 
@@ -271,15 +262,5 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     if result == False:
         raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
     request_status = await GoogleSearchResult.update_request_status(db, inter_data["id"], True)
-    # if inter_data["additional_information"] != "":
-        
-    #     res_data = {
-    #         "requested_id": result.id,
-    #         "response_type": 0,
-    #         "response": inter_data["additional_information"],
-    #         "respond_to": 1
-    #     }
-    #     create_response = await InterventionResponseRepo.create(db, res_data)
-    
-    #     return create_response
+
     return result

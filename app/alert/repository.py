@@ -22,6 +22,14 @@ class AlertRepo:
             print("Alert Exception", e)
             return False
         
+    async def get_admin_alert(db: Session):
+        try:
+            alert_data = db.query(Alert).filter(Alert.user_id == -1).order_by(Alert.created_at.desc()).all()
+            return alert_data
+        except Exception as e:
+            print("Alert Exception", e)
+            return False
+        
     async def get_by_user_id(db: Session, user_id: int):
         try:
             alert_setting = await AlertSettingRepo.get_alert_setting(db, user_id)
@@ -91,6 +99,14 @@ class AlertRepo:
             print("Alert Exception", e)
             return False
         
+    async def get_admin_limit_alert(db: Session, limit_cnt: int):
+        try:
+            result = db.query(Alert).filter(Alert.user_id == -1).order_by(Alert.created_at.desc()).limit(limit_cnt)
+            return result
+        except Exception as e:
+            print("Alert Exception", e)
+            return False
+        
     async def get_limit_alert(db: Session, user_id: int, limit_cnt: int):
         try:
             alert_setting = await AlertSettingRepo.get_alert_setting(db, user_id)
@@ -112,7 +128,7 @@ class AlertRepo:
             other_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label not in ["positive", "negative", "neutral"]))
             if result != None:
                 result = result.union_all(other_result).order_by(Alert.created_at.desc()).all()
-            return result[:3]
+            return result[:limit_cnt]
         except Exception as e:
             print("Alert Exception", e)
             return False

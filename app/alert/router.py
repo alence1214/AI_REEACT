@@ -4,13 +4,29 @@ from sqlalchemy.orm import Session
 from database import get_db
 from tools import get_user_id, check_user_role
 from .repository import AlertRepo, AlertSettingRepo
-from app.auth.auth_bearer import JWTBearer
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer
 from app.messaging.repository import MessageRepo
 from app.intervention.repository import InterventionRepo
 from app.intervention_response.repository import InterventionResponseRepo
 
 
 router = APIRouter()
+
+@router.get("/admin/alert", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Alert"])
+async def get_admin_alert_data(request: Request, db: Session=Depends(get_db)):
+    alert_data = await AlertRepo.get_admin_alert(db)
+    if alert_data == False:
+        raise HTTPException(status_code=403, detail="Alert database error.")
+    return {
+        "alert_data": alert_data
+    }
+    
+@router.get("/admin/get_limit_alert", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Alert"])
+async def get_admin_three_alert_data(request: Request, db: Session=Depends(get_db)):
+    result = await AlertRepo.get_admin_limit_alert(db, 3)
+    return {
+        "last_three_alert": result
+    }
 
 @router.get("/alert", dependencies=[Depends(JWTBearer())], tags=["Alert"])
 async def get_alert_data(request: Request, db: Session=Depends(get_db)):
