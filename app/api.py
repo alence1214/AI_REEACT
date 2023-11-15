@@ -22,8 +22,8 @@ from app.websocket.ws import router as websocket_router
 from app.cron_job.cron_job import CronJob
 from app.websocket.ws import connected_clients
 
-app = FastAPI(docs_url=None, redoc_url=None)
-# app = FastAPI()
+# app = FastAPI(docs_url=None, redoc_url=None)
+app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/build", StaticFiles(directory="build"), name='frontent')
