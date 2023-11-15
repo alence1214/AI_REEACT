@@ -84,10 +84,10 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
         user_data = await UserRepo.get_user_by_id(db, user_id)
         alert_data = {
-            "user_id": inter_data.user_id,
+            "user_id": inter_data['user_id'],
             "search_id": user_data.avatar_url,
-            "title": f"Reeact posez une question sur votre demande de service sur {inter_data.site_url}",
-            "site_url": inter_data.site_url,
+            "title": f"Reeact posez une question sur votre demande de service sur {inter_data['site_url']}",
+            "site_url": inter_data['site_url'],
             "label": "Intervention"
         }
         alert_result = await AlertRepo.create(db, alert_data)
@@ -122,10 +122,10 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
         user_data = await UserRepo.get_user_by_id(db, user_id)
         alert_data = {
-            "user_id": inter_data.user_id,
+            "user_id": inter_data['user_id'],
             "search_id": user_data.avatar_url,
-            "title": f"React a envoyé un devis concernant votre demande de service à {inter_data.site_url}",
-            "site_url": inter_data.site_url,
+            "title": f"React a envoyé un devis concernant votre demande de service à {inter_data['site_url']}",
+            "site_url": inter_data['site_url'],
             "label": "Intervention"
         }
         alert_result = await AlertRepo.create(db, alert_data)
@@ -138,10 +138,10 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
         user_data = await UserRepo.get_user_by_id(db, user_id)
         alert_data = {
-            "user_id": inter_data.user_id,
+            "user_id": inter_data['user_id'],
             "search_id": user_data.avatar_url,
-            "title": f"React a rejeté votre demande de service sur {inter_data.site_url}",
-            "site_url": inter_data.site_url,
+            "title": f"React a rejeté votre demande de service sur {inter_data['site_url']}",
+            "site_url": inter_data['site_url'],
             "label": "Intervention"
         }
         alert_result = await AlertRepo.create(db, alert_data)
@@ -213,8 +213,8 @@ async def post_intervention_response(intervention_id: int, user_request: Request
     alert_data = {
         "user_id": -1,
         "search_id": user_data.avatar_url,
-        "title": f"{user_data.full_name} réponds à ta question sur {inter_data.site_url}",
-        "site_url": inter_data.site_url,
+        "title": f"{user_data.full_name} réponds à ta question sur {inter_data['site_url']}",
+        "site_url": inter_data['site_url'],
         "label": "Intervention"
     }
     alert_result = await AlertRepo.create(db, alert_data)
@@ -258,8 +258,8 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     alert_data = {
         "user_id": -1,
         "search_id": user_data.avatar_url,
-        "title": f"{user_data.full_name} a envoyé une demande de service concernant {inter_data.site_url}",
-        "site_url": inter_data.site_url,
+        "title": f"{user_data.full_name} a envoyé une demande de service concernant {inter_data['site_url']}",
+        "site_url": inter_data['site_url'],
         "label": "Intervention"
     }
     alert_result = await AlertRepo.create(db, alert_data)
