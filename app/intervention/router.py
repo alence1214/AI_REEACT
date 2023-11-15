@@ -64,7 +64,7 @@ async def get_intervention_by_id(intervention_id: int, db: Session=Depends(get_d
     mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
     mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
     print(mark_as_read)
-    return {"result": result}
+    return result
 
 @router.post("/admin/intervention/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
 async def post_intervention_response(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
@@ -188,7 +188,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
     print(mark_as_read)
     print(result)
-    return {"result": result}
+    return result
 
 @router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
 async def post_intervention_response(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
