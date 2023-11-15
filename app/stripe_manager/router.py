@@ -79,7 +79,7 @@ async def pay_for_invoice(invoice_id: int, request: Request, db: Session=Depends
     user_data = await UserRepo.get_user_by_id(db, user_id)
     alert_data = {
         "user_id": -1,
-        "search_id": user_data["avatar_url"],
+        "search_id": user_data.avatar_url,
         "title": f"React a payé le devis concernant la demande de service.",
         "site_url": " ",
         "label": "Intervention"
