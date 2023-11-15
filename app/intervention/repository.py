@@ -530,7 +530,10 @@ class InterventionRepo:
         try:
             result = db.query(model.InterventionRequest).\
                         filter(model.InterventionRequest.id == intervention_id).\
-                        update({model.InterventionRequest.admin_read_status: read_status} if user_role else {model.InterventionRequest.user_read_status: read_status})
+                        update({model.InterventionRequest.admin_read_status: read_status}) \
+                        if user_role else db.query(model.InterventionRequest).\
+                        filter(model.InterventionRequest.id == intervention_id).\
+                        update({model.InterventionRequest.user_read_status: read_status})
             db.commit()
             return result
         except Exception as e:
