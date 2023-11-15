@@ -29,11 +29,11 @@ class InterventionResponseRepo:
             res = db.query(InterventionResponse).\
                 filter(InterventionResponse.request_id == request_id).\
                 order_by(InterventionResponse.created_at).all()
+            res = json.load(res)
             return res
         except Exception as e:
             print(e)
             return False
-        return res
     
     async def get_quote_by_request_id(db: Session, request_id: int):
         try:
