@@ -187,7 +187,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     
     mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
     print(mark_as_read)
-    
+    print(result)
     return result
 
 @router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
