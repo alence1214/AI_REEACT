@@ -91,6 +91,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
             "label": "Intervention"
         }
         alert_result = await AlertRepo.create(db, alert_data)
+        print(alert_result)
         
         await InterventionRepo.request_approved(db, intervention_id)
         return inter_response_create
@@ -129,6 +130,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
             "label": "Intervention"
         }
         alert_result = await AlertRepo.create(db, alert_data)
+        print(alert_result)
         
         return new_invoice
 
@@ -146,6 +148,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         }
         alert_result = await AlertRepo.create(db, alert_data)
         print(alert_result)
+        
         return result
     mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
     mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
@@ -218,6 +221,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         "label": "Intervention"
     }
     alert_result = await AlertRepo.create(db, alert_data)
+    print(alert_result)
     
     await InterventionRepo.update_datetime(db, intervention_id)
     
@@ -263,6 +267,7 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
         "label": "Intervention"
     }
     alert_result = await AlertRepo.create(db, alert_data)
+    print(alert_result)
     if result == False:
         raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
     request_status = await GoogleSearchResult.update_request_status(db, inter_data["id"], True)
