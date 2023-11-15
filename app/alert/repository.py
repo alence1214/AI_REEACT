@@ -41,8 +41,9 @@ class AlertRepo:
                     result = netural_result
                 else:
                     result = result.union_all(netural_result)
+            other_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label not in ["positive", "negative", "neutral"]))
             if result != None:
-                result = result.order_by(Alert.created_at.desc()).all()
+                result = result.union_all(other_result).order_by(Alert.created_at.desc()).all()
             return result
         except Exception as e:
             print("Alert Exception", e)
@@ -108,8 +109,9 @@ class AlertRepo:
                     result = netural_result
                 else:
                     result = result.union_all(netural_result)
+            other_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label not in ["positive", "negative", "neutral"]))
             if result != None:
-                result = result.order_by(Alert.created_at.desc()).all()
+                result = result.union_all(other_result).order_by(Alert.created_at.desc()).all()
             return result[:3]
         except Exception as e:
             print("Alert Exception", e)
