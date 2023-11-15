@@ -547,7 +547,6 @@ class InterventionRepo:
                         else db.query(model.InterventionRequest.id,
                                       model.InterventionRequest.user_id,
                                       model.InterventionRequest.user_read_status).\
-                                join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
                                 filter(and_(model.InterventionRequest.user_id == user_id,
                                             model.InterventionRequest.user_read_status == False)).count()
             return count
