@@ -14,7 +14,8 @@ class InterventionRequest(Base):
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
     status = Column(Integer)
-    read_status = Column(Boolean)
+    admin_read_status = Column(Boolean)
+    user_read_status = Column(Boolean)
     
     def __repr__(self):
         return 'InterventionRequests(information=%s, additional_information=%s, created_at=%s, updated_at=%s)' % (self.information, self.additional_information, self.created_at, self.updated_at)

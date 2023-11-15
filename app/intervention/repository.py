@@ -20,7 +20,8 @@ class InterventionRepo:
                                                         created_at=created_at,
                                                         updated_at=created_at,
                                                         status=0,
-                                                        read_status=False)
+                                                        admin_read_status=False,
+                                                        user_read_status=True)
             db.add(db_intervention)
             db.commit()
             db.refresh(db_intervention)
@@ -47,7 +48,8 @@ class InterventionRepo:
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
                             model.InterventionRequest.status,
-                            model.InterventionRequest.read_status).\
+                            model.InterventionRequest.admin_read_status,
+                            model.InterventionRequest.user_read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
             return results
@@ -67,7 +69,8 @@ class InterventionRepo:
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
                             model.InterventionRequest.status,
-                            model.InterventionRequest.read_status).\
+                            model.InterventionRequest.admin_read_status,
+                            model.InterventionRequest.user_read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         join(InterventionResponse, InterventionResponse.request_id == model.InterventionRequest.id, isouter=True).\
                         filter(model.InterventionRequest.id == inter_id).\
@@ -87,7 +90,8 @@ class InterventionRepo:
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
                             model.InterventionRequest.status,
-                            model.InterventionRequest.read_status).\
+                            model.InterventionRequest.admin_read_status,
+                            model.InterventionRequest.user_read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         filter(model.InterventionRequest.status == 1).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
@@ -106,7 +110,8 @@ class InterventionRepo:
                             model.InterventionRequest.updated_at,
                             model.InterventionRequest.site_url,
                             model.InterventionRequest.status,
-                            model.InterventionRequest.read_status).\
+                            model.InterventionRequest.admin_read_status,
+                            model.InterventionRequest.user_read_status).\
                         join(User, model.InterventionRequest.user_id == User.id).\
                         filter(model.InterventionRequest.status == 2).\
                         order_by(model.InterventionRequest.updated_at.desc()).all()
@@ -134,7 +139,8 @@ class InterventionRepo:
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
                                      model.InterventionRequest.status,
-                                     model.InterventionRequest.read_status,
+                                     model.InterventionRequest.admin_read_status,
+                                     model.InterventionRequest.user_read_status,
                                      SentimentResult.label).\
                 join(GoogleSearchResult, and_(model.InterventionRequest.title == GoogleSearchResult.title, 
                                               model.InterventionRequest.site_url == GoogleSearchResult.link)).\
@@ -176,7 +182,8 @@ class InterventionRepo:
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
                                      model.InterventionRequest.status,
-                                     model.InterventionRequest.read_status).\
+                                     model.InterventionRequest.admin_read_status,
+                                     model.InterventionRequest.user_read_status).\
                                 filter(and_(extract("day", model.InterventionRequest.created_at) == cur_day,
                                             extract("month", model.InterventionRequest.created_at) == cur_month,
                                             extract("year", model.InterventionRequest.created_at) == cur_year,
@@ -220,7 +227,8 @@ class InterventionRepo:
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
                                      model.InterventionRequest.status,
-                                     model.InterventionRequest.read_status).\
+                                     model.InterventionRequest.admin_read_status,
+                                     model.InterventionRequest.user_read_status).\
                                 filter(and_(extract("day", model.InterventionRequest.created_at) <= cur_day,
                                             extract("day", model.InterventionRequest.created_at) >= start_cur_week,
                                             extract("month", model.InterventionRequest.created_at) == cur_month,
@@ -261,7 +269,8 @@ class InterventionRepo:
                                      model.InterventionRequest.updated_at,
                                      model.InterventionRequest.site_url,
                                      model.InterventionRequest.status,
-                                     model.InterventionRequest.read_status).\
+                                     model.InterventionRequest.admin_read_status,
+                                     model.InterventionRequest.user_read_status).\
                                 filter(and_(extract("month", model.InterventionRequest.created_at) == cur_month,
                                             extract("year", model.InterventionRequest.created_at) == cur_year,
                                             model.InterventionRequest.user_id == user_id)).\
@@ -360,7 +369,8 @@ class InterventionRepo:
                                 model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
-                                model.InterventionRequest.read_status,
+                                model.InterventionRequest.admin_read_status,
+                                model.InterventionRequest.user_read_status,
                                 model.InterventionRequest.status).\
                             join(User, model.InterventionRequest.user_id == User.id).\
                             filter(and_(extract("day", model.InterventionRequest.created_at) == cur_day,
@@ -403,7 +413,8 @@ class InterventionRepo:
                                 model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
-                                model.InterventionRequest.read_status,
+                                model.InterventionRequest.admin_read_status,
+                                model.InterventionRequest.user_read_status,
                                 model.InterventionRequest.status).\
                             join(User, model.InterventionRequest.user_id == User.id).\
                             filter(and_(extract("day", model.InterventionRequest.created_at) <= cur_day,
@@ -444,7 +455,8 @@ class InterventionRepo:
                                 model.InterventionRequest.additional_information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
-                                model.InterventionRequest.read_status,
+                                model.InterventionRequest.admin_read_status,
+                                model.InterventionRequest.user_read_status,
                                 model.InterventionRequest.status).\
                             join(User, model.InterventionRequest.user_id == User.id).\
                             filter(and_(extract("month", model.InterventionRequest.created_at) == cur_month,
@@ -479,7 +491,8 @@ class InterventionRepo:
                                 model.InterventionRequest.information,
                                 model.InterventionRequest.updated_at,
                                 model.InterventionRequest.site_url,
-                                model.InterventionRequest.read_status,
+                                model.InterventionRequest.admin_read_status,
+                                model.InterventionRequest.user_read_status,
                                 model.InterventionRequest.status).\
                             join(User, model.InterventionRequest.user_id == User.id).\
                             filter(User.id == user_id).\
@@ -513,11 +526,11 @@ class InterventionRepo:
             print("Exception in InterventionRepo:", e)
             return False
     
-    async def mark_as_read(db:Session, intervention_id: int):
+    async def update_read_status(db:Session, intervention_id: int, user_role: bool, read_status: bool):
         try:
             result = db.query(model.InterventionRequest).\
                         filter(model.InterventionRequest.id == intervention_id).\
-                        update({model.InterventionRequest.read_status: True})
+                        update({model.InterventionRequest.admin_read_status: read_status} if user_role else {model.InterventionRequest.user_read_status: read_status})
             db.commit()
             return result
         except Exception as e:
@@ -528,25 +541,15 @@ class InterventionRepo:
         try:
             count = db.query(model.InterventionRequest.id,
                              model.InterventionRequest.user_id,
-                             model.InterventionRequest.read_status,
-                             InterventionResponse.request_id,
-                             InterventionResponse.respond_to,
-                             InterventionResponse.status).\
-                        join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
-                        filter(or_(and_(model.InterventionRequest.user_id == user_id,
-                                        model.InterventionRequest.read_status == False),
-                                   and_(InterventionResponse.status == False,
-                                        InterventionResponse.respond_to == 0))).\
-                        count() if user_role == False else db.query(model.InterventionRequest.id,
-                                                                    model.InterventionRequest.user_id,
-                                                                    model.InterventionRequest.read_status,
-                                                                    InterventionResponse.request_id,
-                                                                    InterventionResponse.respond_to,
-                                                                    InterventionResponse.status).\
-                                                                join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
-                                                                filter(and_(InterventionResponse.respond_to == 1,
-                                                                            InterventionResponse.status == False)).\
-                                                                count()
+                             model.InterventionRequest.admin_read_status).\
+                        filter(model.InterventionRequest.admin_read_status == False).\
+                        count() if user_role == False \
+                        else db.query(model.InterventionRequest.id,
+                                      model.InterventionRequest.user_id,
+                                      model.InterventionRequest.user_read_status).\
+                                join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
+                                filter(and_(model.InterventionRequest.user_id == user_id,
+                                            model.InterventionRequest.user_read_status == False)).count()
             return count
         except Exception as e:
             print("Exception in InterventionRepo:", e)

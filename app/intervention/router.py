@@ -34,7 +34,7 @@ async def get_inter_request_data(inter_id: int, db: Session=Depends(get_db)):
     inter_data = await InterventionRepo.get_inter_by_id(db, inter_id)
     if inter_data == False or inter_data == None:
         raise HTTPException(status_code=403, detail="Intervention DB error.")
-    mark_as_read = await InterventionRepo.mark_as_read(db, inter_id)
+    mark_as_read = await InterventionRepo.update_read_status(db, inter_id, True, True)
     print(mark_as_read)
     return {
         "inter_data": inter_data
@@ -61,8 +61,7 @@ async def get_intervention_by_id(intervention_id: int, db: Session=Depends(get_d
     result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
     if result == False:
         raise HTTPException(status_code=403, detail="Database Error.")
-    mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
-    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    mark_as_read = await InterventionRepo.update_read_status(db, intervention_id, True, True)
     print(mark_as_read)
     return result
 
@@ -150,6 +149,8 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         print(alert_result)
         
         return result
+    mark = await InterventionRepo.update_read_status(db, intervention_id, False, False)
+    return mark
 
 @router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
 async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
@@ -184,7 +185,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     
     result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
     
-    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    mark_as_read = await InterventionResponseRepo.update_read_status(db, intervention_id, False, True)
     print(mark_as_read)
     return result
 
@@ -219,6 +220,8 @@ async def post_intervention_response(intervention_id: int, user_request: Request
     
     await InterventionRepo.update_datetime(db, intervention_id)
     
+    mark = InterventionRepo.update_read_status(db, intervention_id, True, False)
+    
     return inter_response_create
 
 @router.get("/intervention_requests/quote/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
@@ -229,7 +232,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
         raise HTTPException(status_code=403, detail="Invaild request!")
     
     result = await InterventionResponseRepo.get_quote_by_request_id(db, intervention_id)
-    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    mark_as_read = await InterventionRepo.update_read_status(db, intervention_id, intervention_id, False, True)
     print(mark_as_read)
     return result
 
@@ -262,5 +265,4 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     if result == False:
         raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
     request_status = await GoogleSearchResult.update_request_status(db, inter_data["id"], True)
-
     return result
