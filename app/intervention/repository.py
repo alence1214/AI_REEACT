@@ -533,10 +533,20 @@ class InterventionRepo:
                              InterventionResponse.respond_to,
                              InterventionResponse.status).\
                         join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
-                        filter(and_(model.InterventionRequest.user_id == user_id,
-                                    model.InterventionRequest.read_status == False),
-                                    InterventionResponse.respond_to == int(user_role)).\
-                        count()
+                        filter(or_(and_(model.InterventionRequest.user_id == user_id,
+                                        model.InterventionRequest.read_status == False),
+                                   and_(InterventionResponse.status == False,
+                                        InterventionResponse.respond_to == 0))).\
+                        count() if user_role == False else db.query(model.InterventionRequest.id,
+                                                                    model.InterventionRequest.user_id,
+                                                                    model.InterventionRequest.read_status,
+                                                                    InterventionResponse.request_id,
+                                                                    InterventionResponse.respond_to,
+                                                                    InterventionResponse.status).\
+                                                                join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
+                                                                filter(and_(InterventionResponse.respond_to == 1,
+                                                                            InterventionResponse.status == False)).\
+                                                                count()
             return count
         except Exception as e:
             print("Exception in InterventionRepo:", e)
