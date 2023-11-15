@@ -19,7 +19,8 @@ class InterventionRepo:
                                                         site_url=intervention["site_url"],
                                                         created_at=created_at,
                                                         updated_at=created_at,
-                                                        status=0)
+                                                        status=0,
+                                                        read_status=False)
             db.add(db_intervention)
             db.commit()
             db.refresh(db_intervention)
@@ -480,10 +481,39 @@ class InterventionRepo:
     async def update_datetime(db: Session, intervention_id: int):
         try:
             now = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S")
-            db.query(InterventionResponse).\
-                filter(InterventionResponse.request_id == intervention_id).\
-                update({InterventionResponse.updated_at: now})
+            db.query(model.InterventionRequest).\
+                filter(model.InterventionRequest.id == intervention_id).\
+                update({model.InterventionRequest.updated_at: now})
             db.commit()
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
+    
+    async def mark_as_read(db:Session, intervention_id: int):
+        try:
+            db.query(model.InterventionRequest).\
+                filter(model.InterventionRequest.id == intervention_id).\
+                update({model.InterventionRequest.read_status: True})
+            db.commit()
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
+        
+    async def get_unread_count(db: Session, user_id: int, user_role: bool):
+        try:
+            count = db.query(model.InterventionRequest.id,
+                             model.InterventionRequest.user_id,
+                             model.InterventionRequest.read_status,
+                             InterventionResponse.request_id,
+                             InterventionResponse.respond_to,
+                             InterventionResponse.status).\
+                        join(InterventionResponse, model.InterventionRequest.id == InterventionResponse.request_id).\
+                        filter(or_(and_(model.InterventionRequest.user_id == user_id,
+                                        model.InterventionRequest.read_status == False),
+                                   and_(InterventionResponse.status == False,
+                                        InterventionResponse.respond_to == int(user_role)))).\
+                        count()
+            return count
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False

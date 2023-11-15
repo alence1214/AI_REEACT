@@ -6,6 +6,8 @@ from tools import get_user_id, check_user_role
 from .repository import AlertRepo, AlertSettingRepo
 from app.auth.auth_bearer import JWTBearer
 from app.messaging.repository import MessageRepo
+from app.intervention.repository import InterventionRepo
+from app.intervention_response.repository import InterventionResponseRepo
 
 
 router = APIRouter()
@@ -46,11 +48,12 @@ async def change_alert_setting(request: Request, db: Session=Depends(get_db)):
 async def get_unread_counts(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     user_role = check_user_role(request)
+    inter_unread_count = await InterventionRepo.get_unread_count(db, user_id, True if user_role == "Customer" else False)
     msg_unread_count = await MessageRepo.get_unread_count(db, user_id, user_role)
     alert_unread_count = await AlertRepo.get_unread_count(db, user_id) if user_role == "Customer" else 0
     return {
         "msg_unread_count": msg_unread_count,
-        "alert_unread_count": alert_unread_count
+        "alert_unread_count": alert_unread_count + inter_unread_count
     }
 
 @router.get("/get_limit_alert", dependencies=[Depends(JWTBearer())], tags=["Alert"])

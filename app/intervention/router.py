@@ -13,7 +13,7 @@ from app.invoice.repository import InvoiceRepo
 from app.stripe_manager.stripe_manager import StripeManager
 from app.user.repository import UserRepo
 from app.googleSearchResult.repository import GoogleSearchResult
-
+from app.alert.repository import AlertRepo
 
 router = APIRouter()
 
@@ -34,6 +34,8 @@ async def get_inter_request_data(inter_id: int, db: Session=Depends(get_db)):
     inter_data = await InterventionRepo.get_inter_by_id(db, inter_id)
     if inter_data == False or inter_data == None:
         raise HTTPException(status_code=403, detail="Intervention DB error.")
+    mark_as_read = await InterventionRepo.mark_as_read(db, inter_id)
+    print(mark_as_read)
     return {
         "inter_data": inter_data
     }
@@ -59,6 +61,9 @@ async def get_intervention_by_id(intervention_id: int, db: Session=Depends(get_d
     result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
     if result == False:
         raise HTTPException(status_code=403, detail="Database Error.")
+    mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
+    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    print(mark_as_read)
     return result
 
 @router.post("/admin/intervention/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Intervention"])
@@ -75,6 +80,18 @@ async def post_intervention_response(intervention_id: int, user_request: Request
             "respond_to": 0
         }
         inter_response_create = await InterventionResponseRepo.create(db, inter_response_data)
+        
+        inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
+        user_data = await UserRepo.get_user_by_id(db, user_id)
+        alert_data = {
+            "user_id": inter_data["user_id"],
+            "search_id": user_data["avatar_url"],
+            "title": f"Reeact posez une question sur votre demande de service sur {inter_data['site_url']}",
+            "site_url": inter_data['site_url'],
+            "label": "Intervention"
+        }
+        alert_result = await AlertRepo.create(db, alert_data)
+        
         await InterventionRepo.request_approved(db, intervention_id)
         return inter_response_create
     
@@ -101,11 +118,39 @@ async def post_intervention_response(intervention_id: int, user_request: Request
             "respond_to": 0
         }
         inter_res = await InterventionResponseRepo.create(db, inter_response_data)
+        
+        inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
+        user_data = await UserRepo.get_user_by_id(db, user_id)
+        alert_data = {
+            "user_id": inter_data["user_id"],
+            "search_id": user_data["avatar_url"],
+            "title": f"React a envoyé un devis concernant votre demande de service à {inter_data['site_url']}",
+            "site_url": inter_data['site_url'],
+            "label": "Intervention"
+        }
+        alert_result = await AlertRepo.create(db, alert_data)
+        
         return new_invoice
 
     elif res_data["response_type"] == 2:
         result = await InterventionRepo.reject_intervention(db, intervention_id)
+        
+        inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
+        user_data = await UserRepo.get_user_by_id(db, user_id)
+        alert_data = {
+            "user_id": inter_data["user_id"],
+            "search_id": user_data["avatar_url"],
+            "title": f"React a rejeté votre demande de service sur {inter_data['site_url']}",
+            "site_url": inter_data['site_url'],
+            "label": "Intervention"
+        }
+        alert_result = await AlertRepo.create(db, alert_data)
+        
         return result
+    mark_as_read = await InterventionRepo.mark_as_read(db, intervention_id)
+    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    print(mark_as_read)
+    return mark_as_read
 
 @router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
 async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
@@ -139,6 +184,10 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
         raise HTTPException(status_code=403, detail="Invaild request!")
     
     result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
+    
+    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    print(mark_as_read)
+    
     return result
 
 @router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
@@ -158,7 +207,23 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         "respond_to": 1
     }
     inter_response_create = await InterventionResponseRepo.create(db, inter_response_data)
+    
+    inter_data = await InterventionRepo.get_inter_by_id(db, intervention_id)
+    user_data = await UserRepo.get_user_by_id(db, user_id)
+    alert_data = {
+        "user_id": -1,
+        "search_id": user_data["avatar_url"],
+        "title": f"{user_data['full_name']} réponds à ta question sur {inter_data['site_url']}",
+        "site_url": inter_data['site_url'],
+        "label": "Intervention"
+    }
+    alert_result = await AlertRepo.create(db, alert_data)
+    
     await InterventionRepo.update_datetime(db, intervention_id)
+    
+    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    print(mark_as_read)
+    
     return inter_response_create
 
 @router.get("/intervention_requests/quote/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
@@ -169,7 +234,8 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
         raise HTTPException(status_code=403, detail="Invaild request!")
     
     result = await InterventionResponseRepo.get_quote_by_request_id(db, intervention_id)
-    
+    mark_as_read = await InterventionResponseRepo.mark_as_read(db, intervention_id)
+    print(mark_as_read)
     return result
 
 @router.post("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
@@ -185,7 +251,16 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     check_request_status = await GoogleSearchResult.check_request_status(db, inter_data["id"])
     if check_request_status == False:
         raise HTTPException(status_code=403, detail="Request already sent!")
-    result = await InterventionRepo.create(db, intervention_data, user_id)
+    result = await InterventionRepo.create(db, intervention_data)
+    user_data = await UserRepo.get_user_by_id(db, user_id)
+    alert_data = {
+        "user_id": -1,
+        "search_id": user_data["avatar_url"],
+        "title": f"{user_data['full_name']} a envoyé une demande de service concernant {inter_data['site_url']}",
+        "site_url": inter_data['site_url'],
+        "label": "Intervention"
+    }
+    alert_result = await AlertRepo.create(db, alert_data)
     if result == False:
         raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
     request_status = await GoogleSearchResult.update_request_status(db, inter_data["id"], True)

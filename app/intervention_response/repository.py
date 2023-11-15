@@ -14,7 +14,7 @@ class InterventionResponseRepo:
                                                     response=inter_response["response"],
                                                     created_at=created_at,
                                                     updated_at=created_at,
-                                                    status=0,
+                                                    status=False,
                                                     respond_to=inter_response["respond_to"])
             db.add(db_inter_response)
             db.commit()
@@ -42,3 +42,11 @@ class InterventionResponseRepo:
             print(e)
             return False
         return quote_id
+    
+    async def mark_as_read(db: Session, request_id: int):
+        try:
+            db.query(InterventionResponse).filter(InterventionResponse.request_id == request_id).update({"status": True})
+            db.commit()
+        except Exception as e:
+            print(e)
+            return False
