@@ -45,7 +45,8 @@ class InterventionResponseRepo:
     
     async def mark_as_read(db: Session, request_id: int):
         try:
-            db.query(InterventionResponse).filter(InterventionResponse.request_id == request_id).update({"status": True})
+            db.query(InterventionResponse).filter(InterventionResponse.request_id == request_id).\
+                update({InterventionResponse.status: True})
             db.commit()
         except Exception as e:
             print(e)

@@ -254,6 +254,7 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     result = await InterventionRepo.create(db, intervention_data, user_id)
     
     user_data = await UserRepo.get_user_by_id(db, user_id)
+    print(user_data)
     alert_data = {
         "user_id": -1,
         "search_id": user_data["avatar_url"],
