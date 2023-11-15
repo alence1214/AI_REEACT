@@ -491,10 +491,11 @@ class InterventionRepo:
     
     async def mark_as_read(db:Session, intervention_id: int):
         try:
-            db.query(model.InterventionRequest).\
-                filter(model.InterventionRequest.id == intervention_id).\
-                update({model.InterventionRequest.read_status: True})
+            result = db.query(model.InterventionRequest).\
+                        filter(model.InterventionRequest.id == intervention_id).\
+                        update({model.InterventionRequest.read_status: True})
             db.commit()
+            return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
             return False
