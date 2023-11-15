@@ -31,6 +31,7 @@ class InterventionResponseRepo:
                            InterventionResponse.response,
                            InterventionResponse.respond_to,
                            InterventionResponse.response_type,
+                           InterventionResponse.status,
                            InterventionResponse.created_at).\
                 filter(InterventionResponse.request_id == request_id).\
                 order_by(InterventionResponse.created_at).all()
