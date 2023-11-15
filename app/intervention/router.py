@@ -251,7 +251,8 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     check_request_status = await GoogleSearchResult.check_request_status(db, inter_data["id"])
     if check_request_status == False:
         raise HTTPException(status_code=403, detail="Request already sent!")
-    result = await InterventionRepo.create(db, intervention_data)
+    result = await InterventionRepo.create(db, intervention_data, user_id)
+    
     user_data = await UserRepo.get_user_by_id(db, user_id)
     alert_data = {
         "user_id": -1,
