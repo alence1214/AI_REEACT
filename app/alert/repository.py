@@ -129,7 +129,13 @@ class AlertRepo:
             other_result = db.query(Alert).filter(and_(Alert.user_id == user_id, 
                                                        Alert.label == "Intervention"))
             if result != None:
-                result = result.union_all(other_result).order_by(Alert.created_at.desc()).all()
+                if other_result != None:
+                    result = result.union_all(other_result).order_by(Alert.created_at.desc()).all()
+                else:
+                    result = result.order_by(Alert.created_at.desc()).all()
+            else:
+                if other_result != None:
+                    result = other_result.order_by(Alert.created_at.desc()).all()
             return result[:limit_cnt]
         except Exception as e:
             print("Alert Exception", e)
