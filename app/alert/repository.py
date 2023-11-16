@@ -125,7 +125,8 @@ class AlertRepo:
                     result = netural_result
                 else:
                     result = result.union_all(netural_result)
-            other_result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label not in ["positive", "negative", "neutral"]))
+            other_result = db.query(Alert).filter(and_(Alert.user_id == user_id, 
+                                                       Alert.label == "Intervention"))
             if result != None:
                 result = result.union_all(other_result).order_by(Alert.created_at.desc()).all()
             return result[:limit_cnt]

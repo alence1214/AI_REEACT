@@ -240,7 +240,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
         raise HTTPException(status_code=403, detail="Invaild request!")
     
     result = await InterventionResponseRepo.get_quote_by_request_id(db, intervention_id)
-    mark_as_read = await InterventionRepo.update_read_status(db, intervention_id, intervention_id, False, True)
+    mark_as_read = await InterventionRepo.update_read_status(db, intervention_id, False, True)
     print(mark_as_read)
     return result
 
