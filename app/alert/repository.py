@@ -110,7 +110,6 @@ class AlertRepo:
     async def get_limit_alert(db: Session, user_id: int, limit_cnt: int):
         try:
             alert_setting = await AlertSettingRepo.get_alert_setting(db, user_id)
-            print(alert_setting.positive, alert_setting.negative, alert_setting.netural)
             result = None
             if alert_setting.positive == True:
                 result = db.query(Alert).filter(and_(Alert.user_id == user_id, Alert.label == "positive"))
