@@ -180,6 +180,9 @@ async def get_interventions(req_type: str, user_request:Request, db: Session=Dep
     elif req_type == "monthly":
         result = await InterventionRepo.get_monthly_intervention_data_by_user_id(db, user_id)
     
+    if result == False:
+        raise HTTPException(status_code=404, detail="No Intervention data found")
+    
     return {
         "intervention_requests": result
     }

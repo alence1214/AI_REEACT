@@ -10,6 +10,10 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# The line `metadata = MetaData(bind=engine)` is creating a `MetaData` object and binding it to the
+# database engine.
+# The line `metadata = MetaData(bind=engine)` is creating a `MetaData` object and binding it to the
+# database engine.
 metadata = MetaData(bind=engine)
 metadata.reflect()
 

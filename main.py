@@ -1,6 +1,4 @@
 import uvicorn
-import ssl
-import app.api as main_api
 import app.user.model as userModel
 import app.payment.model as paymentModel
 import app.googleSearchResult.model as googleSearchResult
@@ -33,7 +31,11 @@ cronjobModel.Base.metadata.create_all(bind=engine)
 emailverifyModel.Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
-    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(certfile="cert.pem", keyfile="privkey.pem")
-    uvicorn.run("app.api:app", host="0.0.0.0", port=443, log_level="debug", ssl_keyfile="privkey.pem", ssl_certfile="cert.pem", workers=2, reload=False)
-    # uvicorn.run("app.api:app", host="127.0.0.1", port=8000, log_level="debug", workers=2, reload=False)
+    uvicorn.run("app.api:app",
+                host="0.0.0.0", 
+                port=443, 
+                log_level="debug", 
+                ssl_keyfile="privkey.pem", 
+                ssl_certfile="cert.pem", 
+                workers=4, 
+                reload=False)

@@ -246,8 +246,13 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="User Creation is Failed!")
     
     created_user_alert_setting = await AlertSettingRepo.create(db, {"user_id": created_user.id})
+    card_data = await StripeManager.get_card_data_by_id(payment_data.get("payment_method_id"))
+    if type(card_data) != dict:
+        raise HTTPException(status_code=403, detail="Cannot get card data.")
     
-    created_payment = await UserPaymentRepo.create(db=db, userpayment=payment_data, user_id=created_user.id)
+    card_data["card_holdername"] = payment_data.get("card_holdername")
+    
+    created_payment = await UserPaymentRepo.create(db=db, userpayment=card_data, user_id=created_user.id)
     if created_payment == False:
         raise HTTPException(status_code=403, detail="UserPaymentRepo Creation is Failed!")
     

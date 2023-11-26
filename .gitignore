@@ -4,3 +4,12 @@ env/
 **/__pycache__
 .vscode
 Pipfile*
+*.pem
+*.key
+*.crt
+main.py
+main80.py
+database.py
+tools.py
+local_env_backup
+test_env_backup

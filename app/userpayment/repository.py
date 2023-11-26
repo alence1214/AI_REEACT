@@ -67,6 +67,7 @@ class UserPaymentRepo:
             card_data = db.query(model.UserPayment).filter(and_(model.UserPayment.user_id == user_id,
                                                                 model.UserPayment.default == True)).first()
             card_data.card_number = '*' * 12 + card_data.card_number[-4:]
+            card_data.cvc = '***'
             return card_data
         except Exception as e:
             print("UserPaymentRepo Exception:", e)

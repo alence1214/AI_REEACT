@@ -22,10 +22,56 @@ class StripeManager:
                 }
             )
             return new_customer
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return None
         
+    async def delete_customer(customer_id: str):
+        try:
+            deleted_customer = stripe.Customer.delete(customer_id)
+            return deleted_customer
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e)
+            return e.code
+
+    async def create_subscription(customer_id: str, plan_id: str):
+        try:
+            new_subscription = stripe.Subscription.create(
+                customer=customer_id,
+                items=[
+                    {
+                        "plan": plan_id
+                    }
+                ]
+            )
+            return new_subscription
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e)
+            return e.code
+
+    async def update_subscription(subscription_id: str, plan_id: str):
+        try:
+            updated_subscription = stripe.Subscription.modify(
+                subscription_id,
+                items=[
+                    {
+                        "id": subscription_id,
+                        "plan": plan_id
+                    }
+                ]
+            )
+            return updated_subscription
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e)
+            return e.code
+
+    async def cancel_subscription(subscription_id: str):
+        try:
+            canceled_subscription = stripe.Subscription.delete(subscription_id)
+            return canceled_subscription
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e)
+    
     async def create_payment_method(payment_method_data):
         try:
             new_payment_method = stripe.PaymentMethod.create(
@@ -38,9 +84,9 @@ class StripeManager:
                 }
             )
             return new_payment_method
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e.code
         
     async def create_payment_intent(customer_id: str, amount: int):
         try:
@@ -50,9 +96,9 @@ class StripeManager:
                 customer=customer_id
             )
             return payment_intent.stripe_id
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e.code
     
     async def create_invoice(customer_id: str, amount: int, description: str):
         
@@ -68,9 +114,8 @@ class StripeManager:
                 description=description
             )
             new_invoice.finalize_invoice()
-            print(new_invoice)
             return new_invoice.stripe_id
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return None
     
@@ -85,9 +130,9 @@ class StripeManager:
                 cancel_url="localhost:3000://cancel"
             )
             return session.stripe_id
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e.code
         
     async def create_promo_code(promo_data: dict):
         try:
@@ -109,7 +154,7 @@ class StripeManager:
                 expires_at=int(end_at.timestamp())
             )
             return new_promo_code
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return None
     
@@ -120,6 +165,21 @@ class StripeManager:
             start_date = datetime.datetime.fromtimestamp(start_date)
             start_date = start_date.strftime("%y-%m-%d %H:%M:%S")
             return start_date
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e)
+            return e.code
+        
+    async def get_card_data_by_id(card_id: str):
+        try:
+            card_info = stripe.PaymentMethod.retrieve(card_id)
+            card_detail = {
+                "payment_method_id": card_id,
+                "card_number": card_info["card"]["last4"],
+                "card_holdername": '',
+                "cvc": "***",
+                "expiration_date": f'{card_info["card"]["exp_month"]}/{card_info["card"]["exp_year"]}'
+            }
+            return card_detail
         except Exception as e:
             print("StripeManger Exception:", e)
             return None
@@ -133,9 +193,9 @@ class StripeManager:
                 }
             )
             return customer
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e._message
         
     async def link_payment_method_to_customer(customer_id, payment_method_id):
         try:
@@ -143,10 +203,10 @@ class StripeManager:
                 payment_method_id,
                 customer=customer_id
             )
-            return payment_method
-        except Exception as e:
-            print("StripeManger Exception:", e)
-            return None
+            return dict(payment_method)
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e._message)
+            return e.code
     
     async def link_test_card_to_customer(customer_id):
         try:
@@ -155,9 +215,9 @@ class StripeManager:
                 customer=customer_id
             )
             return payment_method
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e.code
         
     async def pay_for_monthly_usage(customer_id, promo_code):
         try:
@@ -179,18 +239,18 @@ class StripeManager:
                 expand=["latest_invoice.payment_intent"]
             )
             return subscription
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e._message
         
     async def unsubscribe(subsctiption_id: str):
         try:
             subsctiption = stripe.Subscription.retrieve(subsctiption_id)
             subsctiption.delete()
-            return subsctiption_id
-        except Exception as e:
+            return True
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None  
+            return False
     
     async def pay_for_new_keywordurl(customer_id: str):
         try:
@@ -206,18 +266,18 @@ class StripeManager:
                 },
                 expand=["latest_invoice.payment_intent"]
             )
-            return subscription.stripe_id
-        except Exception as e:
+            return subscription
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e._message
         
     async def pay_for_invoice(invoice_id: str):
         try:
             result = stripe.Invoice.pay(invoice_id)
-            return result.stripe_id
-        except Exception as e:
+            return result
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e.code
         
     async def create_invoice_data_from_invoice_id(invoice_id: str, user_id):
         try:
@@ -274,7 +334,7 @@ class StripeManager:
                 "pdf_url": pdf_url
             }
             return invoice_data
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return None
         
@@ -313,8 +373,11 @@ class StripeManager:
                 promo_code["coupon_type"] = coupon_type
             
             currency = invoice.currency
-            
+
             payment_intent = stripe.PaymentIntent.retrieve(invoice.payment_intent)
+            if payment_intent.last_payment_error != None:
+                print(payment_intent.last_payment_error.message)
+                return payment_intent.last_payment_error.code
             payment_method_id = payment_intent.payment_method
             payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
             payment_method_type = payment_method.type
@@ -347,9 +410,9 @@ class StripeManager:
                 "pdf_url": pdf_url
             }
             return invoice_data
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return None
+            return e.code
     
     async def get_cus_id_from_sub_id(subscription_id: str):
         subscription = stripe.Subscription.retrieve(subscription_id)
@@ -372,7 +435,7 @@ class StripeManager:
                 coupon=coupon_id
             )
             return True
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return False
         
@@ -383,7 +446,7 @@ class StripeManager:
             print(promo_stripe_id, coupon_id)
             stripe.Coupon.delete(coupon_id)
             return True
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return False
         
@@ -391,6 +454,6 @@ class StripeManager:
         try:
             stripe.PaymentMethod.detach(card_stripe_id)
             return True
-        except Exception as e:
+        except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return False

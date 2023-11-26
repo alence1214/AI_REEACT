@@ -146,6 +146,3 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
     except Exception as e:
         print(e)
         return False
-    
-if __name__ == "__main__":
-    send_email("honeydreamchaser123@gmail.com", "Test", "Test")

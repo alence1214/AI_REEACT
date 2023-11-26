@@ -1,6 +1,4 @@
 import uvicorn
-import asyncio
-import app.api as main_api
 import app.user.model as userModel
 import app.payment.model as paymentModel
 import app.googleSearchResult.model as googleSearchResult
@@ -33,5 +31,4 @@ cronjobModel.Base.metadata.create_all(bind=engine)
 emailverifyModel.Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
-    # uvicorn.run("app.api:app", host="0.0.0.0", port=443, log_level="debug", ssl_certfile="certificate.crt", ssl_keyfile="private.key", workers=2, reload=False)
     uvicorn.run("app.api:app", host="0.0.0.0", port=80, log_level="debug", workers=2, reload=False)

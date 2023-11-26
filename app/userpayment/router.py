@@ -15,17 +15,25 @@ router = APIRouter()
 async def add_new_card(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     req_data = await request.json()
-    card_data = req_data["payment_data"]
+    card_id = req_data["payment_data"]
     subscription_id = await UserRepo.get_subscription_id(db, user_id)
     customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
     
-    new_payment_method = await StripeManager.link_test_card_to_customer(customer_id)
-    set_default_payment_method = await StripeManager.set_default_payment_method(customer_id, new_payment_method.stripe_id)
+    new_payment_method = await StripeManager.link_payment_method_to_customer(customer_id, card_id.get("pm_id"))
+    if type(new_payment_method) != dict:
+        raise HTTPException(status_code=403, detail=new_payment_method)
     
-    if new_payment_method == None or set_default_payment_method == None:
-        raise HTTPException(status_code=403, detail="Stripe API Error.")
+    set_default_payment_method = await StripeManager.set_default_payment_method(customer_id, card_id.get("pm_id"))
     
-    card_data["payment_method_id"] = new_payment_method.stripe_id
+    if type(set_default_payment_method) == str:
+        raise HTTPException(status_code=403, detail=set_default_payment_method)
+    
+    card_data = await StripeManager.get_card_data_by_id(card_id.get("pm_id"))
+    if type(card_data) == str:
+        raise HTTPException(status_code=403, detail="Cannot get card data.")
+    
+    card_data["card_holdername"] = card_id.get("card_holdername")
+    
     created_payment = await UserPaymentRepo.create(db=db, userpayment=card_data, user_id=user_id)
     if created_payment == False:
         raise HTTPException(status_code=403, detail="Payment DB Error.")

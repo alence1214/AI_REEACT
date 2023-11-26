@@ -48,15 +48,20 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
         raise HTTPException(status_code=400, detail="User already exists!")
     
     new_customer = await StripeManager.create_customer(user_data)
-    # new_payment_method = await StripeManager.create_payment_method(payment_data)
-    # print(f"New payment method: {new_payment_method}")
     
     if new_customer != None:
         
-        new_payment_method = await StripeManager.link_test_card_to_customer(new_customer.stripe_id)
+        new_payment_method = await StripeManager.link_payment_method_to_customer(new_customer.stripe_id, payment_data.get("pm_id"))
+
+        if type(new_payment_method) == str:
+            await StripeManager.delete_customer(new_customer.stripe_id)
+            raise HTTPException(status_code=400, detail=new_payment_method)
         await StripeManager.set_default_payment_method(new_customer.stripe_id, new_payment_method.stripe_id)
         
         subscription_for_signup = await StripeManager.pay_for_monthly_usage(new_customer.stripe_id, promo_code)
+        if type(subscription_for_signup) == str:
+            await StripeManager.delete_customer(new_customer.stripe_id)
+            raise HTTPException(status_code=400, detail=subscription_for_signup)
         
         return {
             "customer_id": new_customer.stripe_id,
@@ -71,8 +76,8 @@ async def pay_for_invoice(invoice_id: int, request: Request, db: Session=Depends
     user_id = get_user_id(request)
     invoice_stripe_id = await InvoiceRepo.get_stripe_id(db, invoice_id, user_id)
     result = await StripeManager.pay_for_invoice(invoice_stripe_id)
-    if result == None:
-        raise HTTPException(status_code=403, detail="Pay for Invoice Failed!")
+    if type(result) == str:
+        raise HTTPException(status_code=403, detail=result)
     await InvoiceRepo.complete_invoice(db, invoice_id)
     await InterventionRepo.complete_request(db, user_id, invoice_id)
     
@@ -100,14 +105,16 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     subscription_id = await UserRepo.get_subscription_id(db, user_id)
     customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
     subscription_for_new_keywordurl = await StripeManager.pay_for_new_keywordurl(customer_id)
+    if type(subscription_for_new_keywordurl) == str:
+        raise HTTPException(status_code=403, detail=subscription_for_new_keywordurl)
     
-    if customer_id == None or subscription_for_new_keywordurl==None:
-        raise HTTPException(status_code=403, detail="Stripe Error")
-    
-    invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_new_keywordurl, user_id)
+    invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_new_keywordurl.stripe_id, user_id)
+    if type(invoice_data) == str:
+        await StripeManager.unsubscribe(subscription_for_new_keywordurl.stripe_id)
+        raise HTTPException(status_code=403, detail=invoice_data)
     result = await InvoiceRepo.create(db, invoice_data)
     
-    gs_result = await get_google_search_analysis(db, user_id, new_keywordurl, 0, 100, subscription_for_new_keywordurl)
+    gs_result = await get_google_search_analysis(db, user_id, new_keywordurl, 0, 100, subscription_for_new_keywordurl.stripe_id)
     
     gs_statistics = await GoogleSearchResult.get_reputation_score(db, user_id)
     cronhistory_data = {
@@ -119,7 +126,7 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     new_cronhistory = await CronHistoryRepo.update(db, user_id, cronhistory_data)
     
     return {
-        "subscription":subscription_for_new_keywordurl,
+        "subscription":subscription_for_new_keywordurl.stripe_id,
         "gs_result": gs_result,
         "new_keywordurl": new_keywordurl
     }
