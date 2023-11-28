@@ -56,7 +56,7 @@ class EmailVerifyRepo:
             cur_time = datetime.datetime.now()
             verify_time = db_email_verify.created_at
             time_delta = cur_time - verify_time
-            ten_minutes = timedelta(minutes=15)
+            ten_minutes = timedelta(minutes=60)
             if time_delta > ten_minutes:
                 new_verify_code = str(random.randint(100000, 999999))
                 db.query(EmailVerify).filter(EmailVerify.email == email).\
