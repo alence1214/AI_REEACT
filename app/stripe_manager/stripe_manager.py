@@ -203,7 +203,7 @@ class StripeManager:
                 payment_method_id,
                 customer=customer_id
             )
-            return dict(payment_method)
+            return payment_method
         except stripe.error.StripeError as e:
             print("StripeManger Exception:", e._message)
             return e.code
