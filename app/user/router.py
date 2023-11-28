@@ -261,8 +261,8 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Set Default Payment Failed.")
     
     invoice_data = await StripeManager.create_invoice_data_from_subscription_id(created_user.subscription_at, created_user.id)
-    if invoice_data == None:
-        raise HTTPException(status_code=403, detail="Stripe Invoice Data Creation is Failed!")
+    if type(invoice_data) == str:
+        raise HTTPException(status_code=403, detail=invoice_data)
     
     result = await InvoiceRepo.create(db, invoice_data)
     if result == False:
