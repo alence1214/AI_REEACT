@@ -40,8 +40,8 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     if verify_result != True:
         raise HTTPException(status_code=400, detail=verify_result)
     
-    email_verify_delete = await EmailVerifyRepo.delete(db, email_verify_payload["email"])
-    print(email_verify_delete)
+    # email_verify_delete = await EmailVerifyRepo.delete(db, email_verify_payload["email"])
+    # print(email_verify_delete)
     
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
@@ -61,7 +61,13 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
         subscription_for_signup = await StripeManager.pay_for_monthly_usage(new_customer.stripe_id, promo_code)
         if type(subscription_for_signup) == str:
             await StripeManager.delete_customer(new_customer.stripe_id)
-            raise HTTPException(status_code=400, detail=subscription_for_signup)
+            raise HTTPException(status_code=400, detail="Subscription creation for Sign Up Failed.")
+        
+        confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_signup.latest_invoice)
+        if type(confirm_invoice_payment) == str:
+            await StripeManager.cancel_subscription(subscription_for_signup.stripe_id)
+            await StripeManager.delete_customer(new_customer.stripe_id)
+            raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
         
         return {
             "customer_id": new_customer.stripe_id,
@@ -107,6 +113,11 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     subscription_for_new_keywordurl = await StripeManager.pay_for_new_keywordurl(customer_id)
     if type(subscription_for_new_keywordurl) == str:
         raise HTTPException(status_code=403, detail=subscription_for_new_keywordurl)
+    
+    confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_new_keywordurl.latest_invoice)
+    if type(confirm_invoice_payment) == str:
+        await StripeManager.cancel_subscription(subscription_for_new_keywordurl.stripe_id)
+        raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
     
     invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_new_keywordurl.stripe_id, user_id)
     if type(invoice_data) == str:

@@ -19,6 +19,7 @@ from app.googleSearchResult.repository import GoogleSearchResult
 from app.searchid_list.repository import SearchIDListRepo
 from app.userpayment.repository import UserPaymentRepo
 from app.stripe_manager.stripe_manager import StripeManager
+from app.email_verify.repository import EmailVerifyRepo
 
 from . import schema as userSchema
 
@@ -239,7 +240,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     db_user = await UserRepo.fetch_by_username(db, username=user_data['full_name'])
     if db_user:
         raise HTTPException(status_code=400, detail="Username already exists!")
-    user_data["email_verified"] = False
+    user_data["email_verified"] = True
     user_data["payment_verified"] = True
     created_user = await UserRepo.create(db=db, user=user_data)
     if created_user == False:
@@ -290,12 +291,14 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     gs_statistics = await GoogleSearchResult.get_reputation_score(db, created_user.id)
     cronhistory_data = {
         "user_id": created_user.id,
-        "total_search_result": gs_statistics["total_count"],
-        "positive_search_result": gs_statistics["positive_count"],
-        "negative_search_result": gs_statistics["negative_count"]
+        "total_search_result": gs_statistics.get("total_count"),
+        "positive_search_result": gs_statistics.get("positive_count"),
+        "negative_search_result": gs_statistics.get("negative_count")
     }
     new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
+    await EmailVerifyRepo.delete(db, created_user.email)
     await send_email(created_user.email, "Bienvenue sur Reeact!", welcome_msg)
+    
     return {
         "user": created_user,
         "jwt": jwt,

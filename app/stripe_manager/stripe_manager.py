@@ -345,6 +345,14 @@ class StripeManager:
             invoice = stripe.Invoice.retrieve(latest_invoice_id)
             invoice_detail = []
             
+            if invoice.status != 'paid':
+                if invoice.payment_intent != None:
+                    payment_intent = stripe.PaymentIntent.retrieve(invoice.payment_intent)
+                    if payment_intent.last_payment_error != None:
+                        print(payment_intent.last_payment_error.message)
+                        return payment_intent.last_payment_error.code
+                return "Payment Failed"
+            
             for data in invoice.lines.data:
                 product_id = data.price.product
                 product = stripe.Product.retrieve(product_id)
@@ -373,14 +381,6 @@ class StripeManager:
                 promo_code["coupon_type"] = coupon_type
             
             currency = invoice.currency
-
-            payment_intent = stripe.PaymentIntent.retrieve(invoice.payment_intent)
-            if payment_intent.last_payment_error != None:
-                print(payment_intent.last_payment_error.message)
-                return payment_intent.last_payment_error.code
-            payment_method_id = payment_intent.payment_method
-            payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
-            payment_method_type = payment_method.type
             
             invoice_pdf_url = invoice.invoice_pdf
             response = requests.get(invoice_pdf_url)
@@ -401,7 +401,7 @@ class StripeManager:
                     "currency": currency,
                     "promo_apply": promo_code,
                 },
-                "payment_method": payment_method_type,
+                "payment_method": "Card",
                 "bill_from": -1,
                 "bill_to": customer_id,
                 "status": "Completed",
