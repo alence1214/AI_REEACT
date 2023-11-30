@@ -34,6 +34,7 @@ async def get_alert_data(request: Request, db: Session=Depends(get_db)):
     alert_data = await AlertRepo.get_by_user_id(db, user_id)
     marked_as_read = await AlertRepo.mark_as_read(db, user_id)
     print(f"{marked_as_read} Alerts are marked as read.")
+    print(alert_data)
     if alert_data == False:
         raise HTTPException(status_code=403, detail="Alert database error.")
     return {
