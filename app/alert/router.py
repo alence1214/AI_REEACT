@@ -32,8 +32,8 @@ async def get_admin_three_alert_data(request: Request, db: Session=Depends(get_d
 async def get_alert_data(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     alert_data = await AlertRepo.get_by_user_id(db, user_id)
-    await AlertRepo.mark_as_read(db, user_id)
-    print(alert_data)
+    marked_as_read = await AlertRepo.mark_as_read(db, user_id)
+    print(f"{marked_as_read} Alerts are marked as read.")
     if alert_data == False:
         raise HTTPException(status_code=403, detail="Alert database error.")
     return {
@@ -75,7 +75,6 @@ async def get_unread_counts(request: Request, db: Session=Depends(get_db)):
 @router.get("/get_limit_alert", dependencies=[Depends(JWTBearer())], tags=["Alert"])
 async def get_three_alert(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
-    print(user_id)
     result = await AlertRepo.get_limit_alert(db, user_id, 3)
     return {
         "last_three_alert": result

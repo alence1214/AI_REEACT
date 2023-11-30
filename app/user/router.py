@@ -313,14 +313,21 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
     """
     db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
     if db_user != "User not exist" and db_user != "Password is not correct" and db_user != False:
-        if db_user.role == 2 and not db_user.subscription_at and (datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").day < datetime.date.today().day or datetime.date.today() - datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d") > datetime.timedelta(days=28)):
-            raise HTTPException(status_code=400, detail="You are not subscribed!")
+        create_date = datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").date()
+        unsubscribe_date = datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d").date()
+        expire_year = unsubscribe_date.year
+        expire_month = unsubscribe_date.month + 1 if create_date.day < unsubscribe_date.day else unsubscribe_date.month
+        expire_day = create_date.day
+        expire_year = expire_year + 1 if expire_month == 13 else expire_year
+        expire_month = 1 if expire_month == 13 else expire_month
+        expire_date = datetime.date(expire_year, expire_month, expire_day)
+        if db_user.role == 2 and not db_user.subscription_at and datetime.date.today() > expire_date:
+            raise HTTPException(status_code=400, detail="Your Subscription Date Expired!")
         jwt = signJWT(db_user.id, db_user.email, db_user.role)
         return {
             "user": db_user,
             "jwt": jwt
         }
-    
     else:
         raise HTTPException(status_code=400, detail=db_user)
 

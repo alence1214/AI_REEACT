@@ -415,9 +415,13 @@ class StripeManager:
             return e.code
     
     async def get_cus_id_from_sub_id(subscription_id: str):
-        subscription = stripe.Subscription.retrieve(subscription_id)
-        customer_id = subscription.customer
-        return customer_id
+        try:
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            customer_id = subscription.customer
+            return customer_id
+        except stripe.error.StripeError as e:
+            print("StripeManger Exception:", e)
+            return None
     
     async def check_promo_code(promo_code_id: str):
         promo = stripe.PromotionCode.retrieve(promo_code_id)
