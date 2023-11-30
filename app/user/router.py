@@ -316,7 +316,7 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
         create_date = datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").date()
         unsubscribe_date = datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d").date()
         expire_year = unsubscribe_date.year
-        expire_month = unsubscribe_date.month + 1 if create_date.day < unsubscribe_date.day else unsubscribe_date.month
+        expire_month = unsubscribe_date.month + 1 if create_date.day <= unsubscribe_date.day else unsubscribe_date.month
         expire_day = create_date.day
         expire_year = expire_year + 1 if expire_month == 13 else expire_year
         expire_month = 1 if expire_month == 13 else expire_month
