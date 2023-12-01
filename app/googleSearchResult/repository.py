@@ -56,6 +56,7 @@ class GoogleSearchResult:
             return "Google Search Result Item updated successfully!"
         except Exception as e:
             print(e)
+            db.rollback()
             return False
     
     async def get_all(db: Session):
@@ -176,6 +177,7 @@ class GoogleSearchResult:
             db.refresh(res)
         except Exception as e:
             print(e)
+            db.rollback()
             return False
         return "Changed Successfully"
         
@@ -216,6 +218,7 @@ class GoogleSearchResult:
             return True
         except Exception as e:
             print("delete_old_results", e)
+            db.rollback()
             return False
         
     async def search_content_by_user_id(db: Session, user_id: int, keyword: str):
@@ -364,6 +367,7 @@ class GoogleSearchResult:
             return True
         except Exception as e:
             print("update_request_status", e)
+            db.rollback()
             return False
 
     async def check_request_status(db: Session, id: int):

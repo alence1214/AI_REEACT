@@ -30,6 +30,7 @@ class SentimentResult:
             return "Sentiment Result Item updated successfully!!!"
         except Exception as e:
             print("Sentiment Result Exception:", e)
+            db.rollback()
             return False
     
     async def get(db: Session, page: int, limit: int):

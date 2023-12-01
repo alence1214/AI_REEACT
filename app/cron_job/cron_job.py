@@ -48,18 +48,18 @@ class CronJob:
                     "location": "France",
                     "gl": "fr",
                     "start": 0,
-                    "num": 100
+                    "num": 150
                 })
                 new_search_result = new_search.get_dictionary()
                 new_organic_results = new_search_result.get('organic_results')
                 new_search_id = new_search_result.get("search_metadata")["id"]
                 
                 count = 0
-                while(count < 50):
+                while(count < 100):
                     try:
                         new_organic_result = new_organic_results[count]
                     except:
-                        break
+                        continue
                     googleSearchResult = {
                         "search_id": new_search_id,
                         "title": new_organic_result["title"],
@@ -90,13 +90,16 @@ class CronJob:
                         created_alert = await AlertRepo.create(db, new_alert)
                         if created_alert != False:
                             alert_cnt += 1
-                
-                db.query(GoogleSearchResult).filter(GoogleSearchResult.search_id == search_id_list_item.search_id).delete()
-                db.commit()
-                db.query(SearchIDList).\
-                    filter(SearchIDList.search_id == search_id_list_item.search_id).\
-                    update({SearchIDList.search_id: new_search_id})
-                db.commit()
+                try:
+                    db.query(GoogleSearchResult).filter(GoogleSearchResult.search_id == search_id_list_item.search_id).delete()
+                    db.commit()
+                    db.query(SearchIDList).\
+                        filter(SearchIDList.search_id == search_id_list_item.search_id).\
+                        update({SearchIDList.search_id: new_search_id})
+                    db.commit()
+                except Exception as e:
+                    db.rollback()
+                    continue
             db_googleSearch = db.query(GoogleSearchResult).\
                                 join(SearchIDList, GoogleSearchResult.search_id == SearchIDList.search_id).\
                                 join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\

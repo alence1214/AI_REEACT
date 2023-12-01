@@ -26,6 +26,7 @@ class InvoiceRepo:
             return db_invoice
         except Exception as e:
             print("InvoiceRepo Exception:", e)
+            db.rollback()
             return False
         
     async def delete_invoice(db: Session, invoice_id: int):
@@ -35,6 +36,7 @@ class InvoiceRepo:
             return invoice
         except Exception as e:
             print("InvoiceRepo Exception:", e)
+            db.rollback()
             return False
     
     async def get_all_invoices(db: Session):

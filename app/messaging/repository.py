@@ -32,6 +32,7 @@ class MessageRepo:
             return db_message
         except Exception as e:
             print(e)
+            db.rollback()
             return False
     
     async def get_all_messages(db: Session):
@@ -130,6 +131,7 @@ class MessageRepo:
             return selected_msg
         except Exception as e:
             print(e)
+            db.rollback()
             return False
     
     async def delete_messages(db: Session, user_id: int, msg_ids: list):
@@ -145,6 +147,7 @@ class MessageRepo:
             return True
         except Exception as e:
             print(e)
+            db.rollback()
             return False
     
     async def delete_one_message(db: Session, user_id: int, msg_id: int):
@@ -158,6 +161,7 @@ class MessageRepo:
             db.commit()
         except Exception as e:
             print(e)
+            db.rollback()
             return False
         
     async def mark_as_read(db: Session, msg_id: int, read_by: bool):
@@ -190,6 +194,7 @@ class MessageRepo:
             return message
         except Exception as e:
             print(e)
+            db.rollback()
             return False
             
     async def get_unread_count(db: Session, user_id: int, user_role: str):

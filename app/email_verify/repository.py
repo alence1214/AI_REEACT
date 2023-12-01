@@ -27,6 +27,7 @@ class EmailVerifyRepo:
             return db_res
         except Exception as e:
             print("EmailVerify Create Failed:", e)
+            db.rollback()
             return False
         
     async def delete(db: Session, email: str):
@@ -36,6 +37,7 @@ class EmailVerifyRepo:
             return res
         except Exception as e:
             print("EmailVerify Create Failed:", e)
+            db.rollback()
             return False
         
     async def get_verify_code(db: Session, email: str):
@@ -67,4 +69,5 @@ class EmailVerifyRepo:
             return True
         except Exception as e:
             print("Getting Verify Code Failed:", e)
+            db.rollback()
             return str(e)

@@ -28,6 +28,7 @@ class InterventionRepo:
             return db_intervention
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
     
     async def get(db: Session):
@@ -303,6 +304,7 @@ class InterventionRepo:
             return res
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
 
     async def get_all_count(db:Session):
@@ -322,6 +324,7 @@ class InterventionRepo:
             return inter
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
         
     async def update_status(db: Session, intervention_id: int, status: int):
@@ -333,6 +336,7 @@ class InterventionRepo:
             return inter
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
             
     async def complete_request(db: Session, user_id: int, invoice_id: int):
@@ -353,6 +357,7 @@ class InterventionRepo:
             return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
         
     async def get_daily_intervention_data(db: Session, inter_type: str=None):
@@ -524,6 +529,7 @@ class InterventionRepo:
             db.commit()
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
     
     async def update_read_status(db:Session, intervention_id: int, user_role: bool, read_status: bool):
@@ -538,6 +544,7 @@ class InterventionRepo:
             return result
         except Exception as e:
             print("Exception in InterventionRepo:", e)
+            db.rollback()
             return False
         
     async def get_unread_count(db: Session, user_id: int, user_role: bool):

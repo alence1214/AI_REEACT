@@ -27,6 +27,7 @@ class UserPaymentRepo:
             return db_userpayment
         except Exception as e:
             print("UserPaymentRepo Exception:", e)
+            db.rollback()
             return False
         
     async def delete(db: Session, card_id: int):
@@ -36,6 +37,7 @@ class UserPaymentRepo:
             return res
         except Exception as e:
             print("UserPaymentRepo Exception:", e)
+            db.rollback()
             return False
         
     async def check_valid_card(db: Session, user_id: int, card_id: int):
@@ -115,6 +117,7 @@ class UserPaymentRepo:
             return True
         except Exception as e:
             print("UserPaymentRepo Exception:", e)
+            db.rollback()
             return False
         
     async def get_stripe_id(db: Session, card_id: int):

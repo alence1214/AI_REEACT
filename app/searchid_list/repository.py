@@ -20,6 +20,7 @@ class SearchIDListRepo:
             return True
         except Exception as e:
             print("SearchIdListRepo Exception:", e)
+            db.rollback()
             return False
         
     async def delete(db: Session, keyword_id: int):
@@ -29,6 +30,7 @@ class SearchIDListRepo:
             return deleted_item
         except Exception as e:
             print("SearchIdListRepo Exception:", e)
+            db.rollback()
             return False
     
     async def unsubscribe_item(db: Session, keyword_id: int):
@@ -38,6 +40,7 @@ class SearchIDListRepo:
             return unsubscribe_item
         except Exception as e:
             print("SearchIdListRepo Exception:", e)
+            db.rollback()
             return False
     
     async def check_valid(db: Session, user_id: int, keyword_id: int):
@@ -80,6 +83,7 @@ class SearchIDListRepo:
             return True
         except Exception as e:
             print("SearchIdListRepo Exception:", e)
+            db.rollback()
             return False
         
     async def update_additional_keyword_url(db: Session, userid: str, search_id: str, additional_keyword_url: str):
@@ -92,6 +96,7 @@ class SearchIDListRepo:
             return True
         except Exception as e:
             print("SearchIdListRepo Exception:", e)
+            db.rollback()
             return False
         
     async def get_item_by_user_id(db: Session, user_id: int):

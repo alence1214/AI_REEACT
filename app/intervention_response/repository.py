@@ -21,6 +21,7 @@ class InterventionResponseRepo:
             db.refresh(db_inter_response)
         except Exception as e:
             print(e)
+            db.rollback()
             return False
         return db_inter_response
     
@@ -57,4 +58,5 @@ class InterventionResponseRepo:
             return result
         except Exception as e:
             print(e)
+            db.rollback()
             return False

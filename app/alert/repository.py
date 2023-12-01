@@ -20,6 +20,7 @@ class AlertRepo:
             return db_alert
         except Exception as e:
             print("Alert Exception", e)
+            db.rollback()
             return False
         
     async def get_admin_alert(db: Session):
@@ -54,6 +55,7 @@ class AlertRepo:
             return result
         except Exception as e:
             print("Alert Exception", e)
+            db.rollback()
             return False
     
     async def mark_as_read(db: Session, user_id: int):
@@ -64,6 +66,7 @@ class AlertRepo:
             return result
         except Exception as e:
             print("Alert Exception", e)
+            db.rollback()
             return False
         
     async def get_unread_count(db: Session, user_id: int):
@@ -160,6 +163,7 @@ class AlertSettingRepo:
             return db_alert_setting
         except Exception as e:
             print("Alert Setting Exception:", e)
+            db.rollback()
             return False
         
     async def get_alert_setting(db: Session, user_id: int):
@@ -186,4 +190,5 @@ class AlertSettingRepo:
             return result
         except Exception as e:
             print("Alert Setting Exception:", e)
+            db.rollback()
             return False

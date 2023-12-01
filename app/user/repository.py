@@ -61,6 +61,7 @@ class UserRepo:
             return db_user
         except Exception as e:
             print("UserRepo Exception:", e)
+            db.rollback()
             return False
     
     async def get_all_user(db: Session):
@@ -189,6 +190,7 @@ class UserRepo:
             return db_user
         except Exception as e:
             print("UserRepo Exception:", e)
+            db.rollback()
             return False
     
     async def get_subscription_id(db: Session, user_id: int):
@@ -327,6 +329,7 @@ class UserRepo:
             return True
         except Exception as e:
             print("UserRepo Exception:", e)
+            db.rollback()
             return False
     
     async def unsubscribe(db: Session, user_id: int):
@@ -337,4 +340,5 @@ class UserRepo:
             return unsubscribe
         except Exception as e:
             print("UserRepo Exception:", e)
+            db.rollback()
             return False

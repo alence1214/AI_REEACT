@@ -20,6 +20,7 @@ class PromoCodeRepo:
             return db_promo_code
         except Exception as e:
             print("PromoCode Exception:", e)
+            db.rollback()
             return False
         
     async def get_all(db: Session):
@@ -47,6 +48,7 @@ class PromoCodeRepo:
             return result
         except Exception as e:
             print("PromoCode Exception:", e)
+            db.rollback()
             return str(e)
         
     async def get_stripe_id(db: Session, promo_id: int):

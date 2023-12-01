@@ -18,6 +18,7 @@ class CronHistoryRepo:
             return db_cronhistory
         except Exception as e:
             print("Cron History Exception:", e)
+            db.rollback()
             return False
         
     async def update(db: Session, user_id: int, cronhistory_data: dict):
@@ -38,6 +39,7 @@ class CronHistoryRepo:
             return select
         except Exception as e:
             print("Cron History Exception:", e)
+            db.rollback()
             return False
         
     async def get_history(db: Session, user_id: int):
