@@ -1,4 +1,5 @@
 import datetime
+import os
 
 from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -55,7 +56,7 @@ async def admin_download_invoices(request: Request, db: Session=Depends(get_db))
     invoice_paths = []
     for invoice_id in invoice_ids:
         invoice_path = await InvoiceRepo.get_invoice_pdf_path(db, invoice_id)
-        if invoice_path != False:
+        if invoice_path != False or os.path.exists(invoice_path):
             invoice_paths.append(invoice_path)
             
     zip_files(invoice_paths, zipfile_path)
