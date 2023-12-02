@@ -6,7 +6,9 @@ SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://honey:honey@127.0.0.1:3306/ree
 # SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:@127.0.0.1:3306/reeact"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, echo=False
+    SQLALCHEMY_DATABASE_URL,
+    echo=False,
+    pool_recycle=3600
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
