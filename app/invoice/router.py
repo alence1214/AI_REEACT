@@ -8,7 +8,7 @@ from database import get_db
 from tools import get_user_id, zip_files
 
 from .repository import InvoiceRepo
-from app.auth.auth_bearer import JWTBearer, UserRoleBearer
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer, SubscriptionBearer
 from app.userpayment.repository import UserPaymentRepo
 
 router = APIRouter()
@@ -62,7 +62,7 @@ async def admin_download_invoices(request: Request, db: Session=Depends(get_db))
     zip_files(invoice_paths, zipfile_path)
     return zipfile_path
 
-@router.get("/invoices", dependencies=[Depends(JWTBearer())], tags=["Invoice"])
+@router.get("/invoices", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Invoice"])
 async def get_invoices(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     result = await InvoiceRepo.get_invoices(db, user_id)
@@ -71,7 +71,7 @@ async def get_invoices(request: Request, db: Session=Depends(get_db)):
         "invoices": result
     }
     
-@router.get("/invoice/{invoice_id}", dependencies=[Depends(JWTBearer())], tags=["Invoice"])
+@router.get("/invoice/{invoice_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Invoice"])
 async def get_invoice_quote(invoice_id: int, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     is_valid_invoice_request = await InvoiceRepo.check_right_request(db, invoice_id, user_id)
@@ -89,7 +89,7 @@ async def get_invoice_quote(invoice_id: int, request: Request, db: Session=Depen
         "card_data": card_data
     }
     
-@router.get("/invoices/{req_type}", dependencies=[Depends(JWTBearer())], tags=["Invoice"])
+@router.get("/invoices/{req_type}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Invoice"])
 async def get_specific_invoice(req_type: str, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     result = None
@@ -105,7 +105,7 @@ async def get_specific_invoice(req_type: str, request: Request, db: Session=Depe
         "invoices": result
     }
 
-@router.post("/invoices/download", dependencies=[Depends(JWTBearer())], tags=["Invoice"])
+@router.post("/invoices/download", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Invoice"])
 async def user_download_invoices(request: Request, db: Session=Depends(get_db)):
     req_data = await request.json()
     invoice_ids = req_data["invoice_ids"]
@@ -119,11 +119,13 @@ async def user_download_invoices(request: Request, db: Session=Depends(get_db)):
         invoice_path = await InvoiceRepo.get_invoice_pdf_path(db, invoice_id)
         if invoice_path != False:
             invoice_paths.append(invoice_path)
-            
+    
+    if len(invoice_paths) == 0:
+        raise HTTPException(status_code=403, detail="No Invoice Found!")
     zip_files(invoice_paths, zipfile_path)
     return zipfile_path
 
-@router.post("/invoices/delete", dependencies=[Depends(JWTBearer())], tags=["Invoice"])
+@router.post("/invoices/delete", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Invoice"])
 async def delete_invoices(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     req_data = await request.json()

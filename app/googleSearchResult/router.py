@@ -8,7 +8,7 @@ from database import get_db
 from tools import get_user_id, analysis_sentiment, remove_http
 
 from .repository import GoogleSearchResult
-from app.auth.auth_bearer import JWTBearer, UserRoleBearer
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer, SubscriptionBearer
 from app.sentimentResult.repository import SentimentResult
 from app.searchid_list.repository import SearchIDListRepo
 from app.alert.repository import AlertRepo
@@ -17,7 +17,7 @@ from app.cron_job.repository import CronHistoryRepo
 
 router = APIRouter()
 
-@router.post("/add_additional_keyword_url", dependencies=[Depends(JWTBearer())], tags=["GoogleSearch"])
+@router.post("/add_additional_keyword_url", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["GoogleSearch"])
 async def add_additional_keyword_url(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     req_data = await request.json()

@@ -4,6 +4,7 @@ import json
 from database import SessionLocal
 from decouple import config
 from serpapi import GoogleSearch
+from sqlalchemy import and_
 
 from tools import analysis_sentiment
 
@@ -35,7 +36,7 @@ class CronJob:
     
     async def serpapi_task():
         print("Starting Monthly Cron Job...")
-        user_list = db.query(User).filter(User.role == 2).all()
+        user_list = db.query(User).filter(and_(User.role == 2, User.subscription_at != None)).all()
         for user in user_list:
             print(user.full_name)
             alert_cnt = 0

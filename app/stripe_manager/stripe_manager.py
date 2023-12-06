@@ -277,7 +277,8 @@ class StripeManager:
             return result
         except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
-            return e.code
+            print(e.code, e._message)
+            return e._message
         
     async def create_invoice_data_from_invoice_id(invoice_id: str, user_id):
         try:

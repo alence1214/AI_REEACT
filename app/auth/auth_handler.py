@@ -18,11 +18,12 @@ def decode_token(token: str):
     except:
         return {}
 
-def signJWT(user_id: int, user_email: str, user_role: int) -> Dict[str, str]:
+def signJWT(user_id: int, user_email: str, user_role: int, subscription_at: str) -> Dict[str, str]:
     payload = {
         "user_id": user_id,
         "user_email": user_email,
         "user_role": user_role,
+        "subscription_at": subscription_at,
         "expires": time.time() + 3600
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)

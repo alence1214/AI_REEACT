@@ -57,3 +57,31 @@ class UserRoleBearer(HTTPBearer):
             if user_role == 0 or user_role == 1:
                 is_admin = True
         return is_admin
+    
+class SubscriptionBearer(HTTPBearer):
+    def __init__(self, auto_error: bool = True):
+        super(SubscriptionBearer, self).__init__(auto_error=auto_error)
+        
+    async def __call__(self, request: Request):
+        credentials: HTTPAuthorizationCredentials = await super(SubscriptionBearer, self).__call__(request)
+        if credentials:
+            is_admin: bool = await self.check_subscription(credentials.credentials)
+            if not is_admin:
+                raise HTTPException(403, detail="You are not Subscripbed!")
+            return True
+        else:
+            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+            
+    async def check_subscription(self, jwttoken: str) -> bool:
+        is_subscribed: bool = False
+        
+        try:
+            payload = decodeJWT(jwttoken)
+        except:
+            payload = None
+        
+        if payload:
+            subscription_at = payload["subscription_at"]
+            if subscription_at != None:
+                is_subscribed = True
+        return is_subscribed

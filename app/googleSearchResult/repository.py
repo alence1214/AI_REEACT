@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from . import model, schema
 import datetime
+import re
 
 from database import metadata
 
@@ -135,11 +136,24 @@ class GoogleSearchResult:
                                        SearchIDList.additional_keyword_url,
                                        SearchIDList.search_id).\
                                 filter(SearchIDList.user_id == user_id).all()
+            final_result = []
+            user_data = db.query(User).filter(User.id == user_id).first()
+            if user_data.subscription_at == None:
+                pattern = r'[a-zA-Z]'
+                for data in result.all():
+                    data = dict(data)
+                    if data["label"] == 'positive' or data["label"] == 'negative':
+                        data["title"] = re.sub(pattern, '*', data["title"])
+                        data["link"] = re.sub(pattern, '*', data["link"])
+                        data["snippet"] = re.sub(pattern, '*', data["snippet"])
+                    final_result.append(data)
+            else:
+                final_result = result.all()
             return {
                 "positive_count": positive_count,
                 "negative_count": negative_count,
                 "keyword_urls": search_keywords,
-                "result": result.all()
+                "result": final_result
             }
         except Exception as e:
             print(e)

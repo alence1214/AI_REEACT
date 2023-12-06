@@ -25,11 +25,12 @@ class UserRepo:
             user["payment_verified"] = user["payment_verified"] if "payment_verified" in user else False
             user["email_verified"] = True #user["email_verified"] if "email_verified" in user else False
             user["avatar_url"] = user["avatar_url"] if "avatar_url" in user else "static/avatar.png"
-            user["social_reason"] = user["social_reason"] if "social_reason" in user else ""
-            user["number_siret"] = user["number_siret"] if "number_siret" in user else ""
-            user["vat_number"] = user["vat_number"] if "vat_number" in user else ""
-            user["activity"] = user["activity"] if "activity" in user else ""
-            user["site_internet"] = user["site_internet"] if "site_internet" in user else ""
+            user["social_reason"] = user["social_reason"] if "social_reason" in user else None
+            user["number_siret"] = user["number_siret"] if "number_siret" in user else None
+            user["vat_number"] = user["vat_number"] if "vat_number" in user else None
+            user["activity"] = user["activity"] if "activity" in user else None
+            user["site_internet"] = user["site_internet"] if "site_internet" in user else None
+            user["subscription_at"] = user["subscription_at"] if "subscription_at" in user else None
             db_user = model.User(email=user['email'],
                                 full_name=user['full_name'],
                                 first_name=user['first_name'],
@@ -54,6 +55,7 @@ class UserRepo:
                                 role=user["role"],
                                 avatar_url=user["avatar_url"],
                                 user_type=user["user_type"],
+                                stripe_id=user["stripe_id"],
                                 forgot_password_token="")
             db.add(db_user)
             db.commit()
@@ -201,7 +203,29 @@ class UserRepo:
         except Exception as e:
             print("UserRepo Exception:", e)
             return False
-        
+    
+    async def update_subscription(db: Session, subscription_id: str, user_id: int):
+        try:
+            user = db.query(model.User).filter(model.User.id == user_id).first()
+            user.subscription_at = subscription_id
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            return user
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            db.rollback()
+            return False
+    
+    async def get_user_stripe_id(db: Session, user_id: int):
+        try:
+            user = db.query(model.User).filter(model.User.id == user_id).first()
+            stripe_id = user.stripe_id
+            return stripe_id
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            return False
+    
     async def get_total_count(db: Session):
         try:
             total_count = db.query(model.User).filter(model.User.role == 2).count()

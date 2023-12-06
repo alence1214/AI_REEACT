@@ -16,11 +16,10 @@ async def add_new_card(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     req_data = await request.json()
     card_id = req_data["payment_data"]
-    subscription_id = await UserRepo.get_subscription_id(db, user_id)
-    customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
+    customer_id = await UserRepo.get_user_stripe_id(db, user_id)
     
     new_payment_method = await StripeManager.link_payment_method_to_customer(customer_id, card_id.get("pm_id"))
-    if type(new_payment_method) != dict:
+    if type(new_payment_method) == str:
         raise HTTPException(status_code=403, detail=new_payment_method)
     
     set_default_payment_method = await StripeManager.set_default_payment_method(customer_id, card_id.get("pm_id"))

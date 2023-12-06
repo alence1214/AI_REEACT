@@ -7,8 +7,8 @@ from database import get_db
 from tools import get_user_id, get_google_search_analysis
 
 from .stripe_manager import StripeManager
-from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import decode_email_verify_JWT
+from app.auth.auth_bearer import JWTBearer, SubscriptionBearer
+from app.auth.auth_handler import decode_email_verify_JWT, signJWT
 from app.user.repository import UserRepo
 from app.email_verify.repository import EmailVerifyRepo
 from app.invoice.repository import InvoiceRepo
@@ -18,66 +18,82 @@ from app.promo_code.repository import PromoCodeRepo
 from app.cron_job.repository import CronHistoryRepo
 from app.googleSearchResult.repository import GoogleSearchResult
 from app.alert.repository import AlertRepo
+from app.user.schema import UserUpdate
 
 router = APIRouter()
 
-@router.post("/stripe/pay_for_signup", tags=["Stripe"])
+@router.post("/stripe/pay_for_signup", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
 async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     req_data = await request.json()
-    user_data = req_data["user_data"]
-    payment_data = req_data["payment_data"]
+    user_id = get_user_id(request)
+    # payment_data = req_data["payment_data"]
     promo_code = req_data["promo_code"] if "promo_code" in req_data else None
     
-    email_verify_token = req_data["email_verify_token"] if "email_verify_token" in req_data else None
-    if email_verify_token == None:
-        raise HTTPException(status_code=400, detail="No Email Verify Token.")
-    email_verify_payload = decode_email_verify_JWT(email_verify_token)
-    if email_verify_payload == False:
-        raise HTTPException(status_code=400, detail="Invalid Token!")
-    if user_data["email"] != email_verify_payload["email"]:
-        raise HTTPException(status_code=400, detail="Token doesn't match.")
-    verify_result = await EmailVerifyRepo.check_verify_code(db, email_verify_payload["email"], email_verify_payload["verify_code"])
-    if verify_result != True:
-        raise HTTPException(status_code=400, detail=verify_result)
+    # email_verify_token = req_data["email_verify_token"] if "email_verify_token" in req_data else None
+    # if email_verify_token == None:
+    #     raise HTTPException(status_code=400, detail="No Email Verify Token.")
+    # email_verify_payload = decode_email_verify_JWT(email_verify_token)
+    # if email_verify_payload == False:
+    #     raise HTTPException(status_code=400, detail="Invalid Token!")
+    # if user_data["email"] != email_verify_payload["email"]:
+    #     raise HTTPException(status_code=400, detail="Token doesn't match.")
+    # verify_result = await EmailVerifyRepo.check_verify_code(db, email_verify_payload["email"], email_verify_payload["verify_code"])
+    # if verify_result != True:
+    #     raise HTTPException(status_code=400, detail=verify_result)
     
     # email_verify_delete = await EmailVerifyRepo.delete(db, email_verify_payload["email"])
     # print(email_verify_delete)
     
-    db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
-    if db_user:
-        raise HTTPException(status_code=400, detail="User already exists!")
+    # db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
+    # if db_user:
+    #     raise HTTPException(status_code=400, detail="User already exists!")
     
-    new_customer = await StripeManager.create_customer(user_data)
+    # new_customer = await StripeManager.create_customer(user_data)
     
-    if new_customer != None:
+    user_data = await UserRepo.get_user_by_id(db, user_id)
+    
+    if user_data == False:
+        raise HTTPException(status_code=403, detail="User not found.")
         
-        new_payment_method = await StripeManager.link_payment_method_to_customer(new_customer.stripe_id, payment_data.get("pm_id"))
+    # new_payment_method = await StripeManager.link_payment_method_to_customer(user_data.stripe_id, payment_data.get("pm_id"))
 
-        if type(new_payment_method) == str:
-            await StripeManager.delete_customer(new_customer.stripe_id)
-            raise HTTPException(status_code=400, detail=new_payment_method)
-        await StripeManager.set_default_payment_method(new_customer.stripe_id, new_payment_method.stripe_id)
-        
-        subscription_for_signup = await StripeManager.pay_for_monthly_usage(new_customer.stripe_id, promo_code)
-        if type(subscription_for_signup) == str:
-            await StripeManager.delete_customer(new_customer.stripe_id)
-            raise HTTPException(status_code=400, detail="Subscription creation for Sign Up Failed.")
-        
-        confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_signup.latest_invoice)
-        if type(confirm_invoice_payment) == str:
-            await StripeManager.cancel_subscription(subscription_for_signup.stripe_id)
-            await StripeManager.delete_customer(new_customer.stripe_id)
-            raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
-        
-        return {
-            "customer_id": new_customer.stripe_id,
-            "payment_method_id": new_payment_method.stripe_id,
-            "subscription_at": subscription_for_signup.stripe_id
-        }
+    # if type(new_payment_method) == str:
+    #     await StripeManager.delete_customer(user_data.stripe_id)
+    #     raise HTTPException(status_code=400, detail=new_payment_method)
+    # await StripeManager.set_default_payment_method(user_data.stripe_id, new_payment_method.stripe_id)
     
-    return False
+    if user_data.subscription_at != None or user_data.subscription_at != "":
+        raise HTTPException(status_code=403, detail="User already subscribed.")
+    
+    subscription_for_signup = await StripeManager.pay_for_monthly_usage(user_data.stripe_id, promo_code)
+    if type(subscription_for_signup) == str:
+        await StripeManager.delete_customer(user_data.stripe_id)
+        raise HTTPException(status_code=400, detail="Subscription creation for Sign Up Failed.")
+    
+    confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_signup.latest_invoice)
+    print(confirm_invoice_payment)
+    if type(confirm_invoice_payment) == str and confirm_invoice_payment != "Invoice is already paid":
+        await StripeManager.cancel_subscription(subscription_for_signup.stripe_id)
+        await StripeManager.delete_customer(user_data.stripe_id)
+        raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
+    
+    updated_user = await UserRepo.update_subscription(db, subscription_for_signup.stripe_id, user_data.id)
+    
+    invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_signup.stripe_id, user_data.id)
+    if type(invoice_data) == str:
+        raise HTTPException(status_code=403, detail=invoice_data)
+    
+    result = await InvoiceRepo.create(db, invoice_data)
+    if result == False:
+        raise HTTPException(status_code=403, detail="InvoiceRepo Creation is Failed!")
+    jwt = signJWT(updated_user.id, updated_user.email, updated_user.role, updated_user.subscription_at)
+    return {
+        "jwt": jwt,
+        "subscription_at": subscription_for_signup.stripe_id
+    }
+    
 
-@router.post("/stripe/pay_for_invoice/{invoice_id}", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
+@router.post("/stripe/pay_for_invoice/{invoice_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Stripe"])
 async def pay_for_invoice(invoice_id: int, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     invoice_stripe_id = await InvoiceRepo.get_stripe_id(db, invoice_id, user_id)
@@ -99,7 +115,7 @@ async def pay_for_invoice(invoice_id: int, request: Request, db: Session=Depends
     
     return True
 
-@router.post("/stripe/pay_for_new_keywordurl", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
+@router.post("/stripe/pay_for_new_keywordurl", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Stripe"])
 async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     req_data = await request.json()
@@ -108,8 +124,7 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     if not check_duplicate:
         raise HTTPException(status_code=403, detail="This keyword already exists.")
     
-    subscription_id = await UserRepo.get_subscription_id(db, user_id)
-    customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
+    customer_id = await UserRepo.get_user_stripe_id(db, user_id)
     subscription_for_new_keywordurl = await StripeManager.pay_for_new_keywordurl(customer_id)
     if type(subscription_for_new_keywordurl) == str:
         raise HTTPException(status_code=403, detail=subscription_for_new_keywordurl)
@@ -142,31 +157,31 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
         "new_keywordurl": new_keywordurl
     }
 
-@router.post("/stripe/create_payment_intent", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
-async def create_payment_intent(user_id: int, amount: int, db: Session=Depends(get_db)):
-    try:
+# @router.post("/stripe/create_payment_intent", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
+# async def create_payment_intent(user_id: int, amount: int, db: Session=Depends(get_db)):
+#     try:
         
-        subscription_id = await UserRepo.get_subscription_id(user_id, db)
-        customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
-        payment_intent_id = await StripeManager.create_payment_intent(customer_id, amount)
+#         subscription_id = await UserRepo.get_subscription_id(user_id, db)
+#         customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
+#         payment_intent_id = await StripeManager.create_payment_intent(customer_id, amount)
         
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=403, detail=str(e))
+#     except Exception as e:
+#         print(e)
+#         raise HTTPException(status_code=403, detail=str(e))
     
-    return payment_intent_id
+#     return payment_intent_id
 
-@router.post("/stripe/checkout_intent", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
-async def create_intent_checkout_session(paymentintent_id: str):
-    try:
+# @router.post("/stripe/checkout_intent", dependencies=[Depends(JWTBearer())], tags=["Stripe"])
+# async def create_intent_checkout_session(paymentintent_id: str):
+#     try:
         
-        session_id = await StripeManager.create_intent_checkout_session(paymentintent_id)
-        return session_id
+#         session_id = await StripeManager.create_intent_checkout_session(paymentintent_id)
+#         return session_id
     
-    except Exception as e:
+#     except Exception as e:
         
-        print(e)
-        raise HTTPException(status_code=403, detail=str(e))
+#         print(e)
+#         raise HTTPException(status_code=403, detail=str(e))
 
 @router.post("/webhook", tags=["Stripe"])
 async def handle_webhook(event: Request):

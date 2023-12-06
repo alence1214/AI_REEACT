@@ -78,6 +78,8 @@ class UserPaymentRepo:
     async def get_payment_by_user_id(db: Session, user_id: int):
         try:
             res = db.query(model.UserPayment).filter(model.UserPayment.user_id == user_id).all()
+            if res == None:
+                return None
             payment_data = []
             for payment in res:
                 print(payment)
@@ -94,10 +96,10 @@ class UserPaymentRepo:
         try:
             res = db.query(model.UserPayment).filter(and_(model.UserPayment.user_id == user_id,
                                                           model.UserPayment.default == True)).first()
-
-            res.card_number = '*' * 12 + res.card_number[-4:]
-            res.cvc = '***'
-            res.stripe_id = "unknown"
+            if res != None:
+                res.card_number = '*' * 12 + res.card_number[-4:]
+                res.cvc = '***'
+                res.stripe_id = "unknown"
             return res
         except Exception as e:
             print("UserPaymentRepo Exception:", e)

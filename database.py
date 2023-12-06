@@ -2,7 +2,8 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://honey:honey@127.0.0.1:3306/reeact"
+# SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://honey:honey@127.0.0.1:3306/reeact"
+SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://honey:honey@127.0.0.1:3306/reeact_test"
 # SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:@127.0.0.1:3306/reeact"
 
 engine = create_engine(
@@ -12,10 +13,6 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# The line `metadata = MetaData(bind=engine)` is creating a `MetaData` object and binding it to the
-# database engine.
-# The line `metadata = MetaData(bind=engine)` is creating a `MetaData` object and binding it to the
-# database engine.
 metadata = MetaData(bind=engine)
 metadata.reflect()
 

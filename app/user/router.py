@@ -9,8 +9,8 @@ from tools import get_user_id, get_google_search_analysis, send_email
 
 from .repository import UserRepo
 from app.websocket.ws import connected_clients
-from app.auth.auth_bearer import JWTBearer, UserRoleBearer
-from app.auth.auth_handler import signJWT, generateJWT, decode_token
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer, SubscriptionBearer
+from app.auth.auth_handler import signJWT, generateJWT, decode_token, decode_email_verify_JWT
 from app.alert.repository import AlertSettingRepo
 from app.invoice.repository import InvoiceRepo
 from app.intervention.repository import InterventionRepo
@@ -232,7 +232,19 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     """
     request_data = await user_request.json()
     user_data = request_data['user_data']
-    payment_data = request_data['payment_data']
+    # payment_data = request_data['payment_data']
+    
+    email_verify_token = request_data["email_verify_token"] if "email_verify_token" in request_data else None
+    if email_verify_token == None:
+        raise HTTPException(status_code=400, detail="No Email Verify Token.")
+    email_verify_payload = decode_email_verify_JWT(email_verify_token)
+    if email_verify_payload == False:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+    if user_data["email"] != email_verify_payload["email"]:
+        raise HTTPException(status_code=400, detail="Token doesn't match.")
+    verify_result = await EmailVerifyRepo.check_verify_code(db, email_verify_payload["email"], email_verify_payload["verify_code"])
+    if verify_result != True:
+        raise HTTPException(status_code=400, detail=verify_result)
     
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
@@ -241,33 +253,41 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Username already exists!")
     user_data["email_verified"] = True
-    user_data["payment_verified"] = True
+    user_data["payment_verified"] = False
+    
+    new_customer = await StripeManager.create_customer(user_data)
+    if new_customer == None:
+        raise HTTPException(status_code=400, detail="Stripe Customer Creation is Failed!")
+    
+    user_data["stripe_id"] = new_customer.stripe_id
+    
     created_user = await UserRepo.create(db=db, user=user_data)
     if created_user == False:
         raise HTTPException(status_code=403, detail="User Creation is Failed!")
     
     created_user_alert_setting = await AlertSettingRepo.create(db, {"user_id": created_user.id})
-    card_data = await StripeManager.get_card_data_by_id(payment_data.get("payment_method_id"))
-    if type(card_data) != dict:
-        raise HTTPException(status_code=403, detail="Cannot get card data.")
     
-    card_data["card_holdername"] = payment_data.get("card_holdername")
+    # card_data = await StripeManager.get_card_data_by_id(payment_data.get("payment_method_id"))
+    # if type(card_data) != dict:
+    #     raise HTTPException(status_code=403, detail="Cannot get card data.")
     
-    created_payment = await UserPaymentRepo.create(db=db, userpayment=card_data, user_id=created_user.id)
-    if created_payment == False:
-        raise HTTPException(status_code=403, detail="UserPaymentRepo Creation is Failed!")
+    # card_data["card_holdername"] = payment_data.get("card_holdername")
     
-    set_default = await UserPaymentRepo.set_as_default(db, created_user.id, created_payment.id)
-    if not set_default:
-        raise HTTPException(status_code=403, detail="Set Default Payment Failed.")
+    # created_payment = await UserPaymentRepo.create(db=db, userpayment=card_data, user_id=created_user.id)
+    # if created_payment == False:
+    #     raise HTTPException(status_code=403, detail="UserPaymentRepo Creation is Failed!")
     
-    invoice_data = await StripeManager.create_invoice_data_from_subscription_id(created_user.subscription_at, created_user.id)
-    if type(invoice_data) == str:
-        raise HTTPException(status_code=403, detail=invoice_data)
+    # set_default = await UserPaymentRepo.set_as_default(db, created_user.id, created_payment.id)
+    # if not set_default:
+    #     raise HTTPException(status_code=403, detail="Set Default Payment Failed.")
     
-    result = await InvoiceRepo.create(db, invoice_data)
-    if result == False:
-        raise HTTPException(status_code=403, detail="InvoiceRepo Creation is Failed!")
+    # invoice_data = await StripeManager.create_invoice_data_from_subscription_id(created_user.subscription_at, created_user.id)
+    # if type(invoice_data) == str:
+    #     raise HTTPException(status_code=403, detail=invoice_data)
+    
+    # result = await InvoiceRepo.create(db, invoice_data)
+    # if result == False:
+    #     raise HTTPException(status_code=403, detail="InvoiceRepo Creation is Failed!")
     
     gs_result = None
     if user_data["keyword_url"] != '':
@@ -275,7 +295,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         if gs_result == False:
             raise HTTPException(status_code=403, detail="gs_result Creation is Failed!")
     
-    jwt = signJWT(created_user.id, user_data['email'], created_user.role)
+    jwt = signJWT(created_user.id, user_data['email'], created_user.role, created_user.subscription_at)
     welcome_msg = f"""
     <html>
         <body>
@@ -313,18 +333,18 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
     """
     db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
     if db_user != "User not exist" and db_user != "Password is not correct" and db_user != False:
-        if db_user.role == 2 and db_user.subscription_at == None:
-            create_date = datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").date()
-            unsubscribe_date = datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d").date()
-            expire_year = unsubscribe_date.year
-            expire_month = unsubscribe_date.month + 1 if create_date.day <= unsubscribe_date.day else unsubscribe_date.month
-            expire_day = create_date.day
-            expire_year = expire_year + 1 if expire_month == 13 else expire_year
-            expire_month = 1 if expire_month == 13 else expire_month
-            expire_date = datetime.date(expire_year, expire_month, expire_day)
-            if datetime.date.today() > expire_date:
-                raise HTTPException(status_code=400, detail="Your Subscription Date Expired!")
-        jwt = signJWT(db_user.id, db_user.email, db_user.role)
+        # if db_user.role == 2 and db_user.subscription_at == None:
+        #     create_date = datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").date()
+        #     unsubscribe_date = datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d").date()
+        #     expire_year = unsubscribe_date.year
+        #     expire_month = unsubscribe_date.month + 1 if create_date.day <= unsubscribe_date.day else unsubscribe_date.month
+        #     expire_day = create_date.day
+        #     expire_year = expire_year + 1 if expire_month == 13 else expire_year
+        #     expire_month = 1 if expire_month == 13 else expire_month
+        #     expire_date = datetime.date(expire_year, expire_month, expire_day)
+        #     if datetime.date.today() > expire_date:
+        #         raise HTTPException(status_code=400, detail="Your Subscription Date Expired!")
+        jwt = signJWT(db_user.id, db_user.email, db_user.role, db_user.subscription_at)
         return {
             "user": db_user,
             "jwt": jwt
@@ -466,7 +486,7 @@ async def update_user(user_id: int, user_request: userSchema.UserUpdate, db: Ses
         "status": db_user
     }
     
-@router.get("/user/unsubscribe", dependencies=[Depends(JWTBearer)], tags=["User"])
+@router.get("/user/unsubscribe", dependencies=[Depends(JWTBearer), Depends(SubscriptionBearer())], tags=["User"])
 async def unsubscribe_signup(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     subscription_id = await UserRepo.get_subscription_id(db, user_id)
@@ -478,7 +498,7 @@ async def unsubscribe_signup(request: Request, db: Session=Depends(get_db)):
         raise HTTPException(status_code=403, detail="Database Error!")
     return "Successfully unsubscribed!"
 
-@router.get("/user/delete_keyword/{keyword_id}", dependencies=[Depends(JWTBearer())], tags=["User"])
+@router.get("/user/delete_keyword/{keyword_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["User"])
 async def delete_keyword_url(keyword_id: int, request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     valid_keyword = await SearchIDListRepo.check_valid(db, user_id, keyword_id)

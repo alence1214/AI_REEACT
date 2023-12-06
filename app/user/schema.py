@@ -28,6 +28,7 @@ class UserBase(BaseModel):
     role: Optional[int] = 2 # 1-Admin 2-User
     avatar_url: Optional[str] = "static/avatar.png"
     user_type: Optional[str] = "Particulier"
+    stripe_id: Optional[str] = None
     forgot_password_token: Optional[str] = None
     
 class UserCreate(UserBase):

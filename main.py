@@ -37,5 +37,5 @@ if __name__ == "__main__":
                 log_level="debug", 
                 ssl_keyfile="privkey.pem", 
                 ssl_certfile="cert.pem", 
-                workers=4, 
+                workers=4,
                 reload=False)

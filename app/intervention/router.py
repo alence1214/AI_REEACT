@@ -7,7 +7,7 @@ from tools import get_user_id, check_user_role
 from fastapi import Query, Path
 
 from .repository import InterventionRepo
-from app.auth.auth_bearer import JWTBearer, UserRoleBearer
+from app.auth.auth_bearer import JWTBearer, UserRoleBearer, SubscriptionBearer
 from app.intervention_response.repository import InterventionResponseRepo
 from app.invoice.repository import InvoiceRepo
 from app.stripe_manager.stripe_manager import StripeManager
@@ -160,7 +160,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
         
         return result
 
-@router.get("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+@router.get("/intervention_requests", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Intervention"])
 async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
     user_id = get_user_id(user_request)
     result = await InterventionRepo.get_daily_intervention_data_by_user_id(db, user_id)
@@ -169,7 +169,7 @@ async def get_interventions(user_request:Request, db: Session=Depends(get_db)):
         "intervention_requests": result
     }
 
-@router.get("/intervention_requests/{req_type}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+@router.get("/intervention_requests/{req_type}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Intervention"])
 async def get_interventions(req_type: str, user_request:Request, db: Session=Depends(get_db)):
     user_id = get_user_id(user_request)
     result = await InterventionRepo.get_by_user_id(db, user_id)
@@ -187,7 +187,7 @@ async def get_interventions(req_type: str, user_request:Request, db: Session=Dep
         "intervention_requests": result
     }
 
-@router.get("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+@router.get("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Intervention"])
 async def get_intervention(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(user_request)
     is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
@@ -200,7 +200,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     print(mark_as_read)
     return result
 
-@router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+@router.post("/intervention_requests/information/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Intervention"])
 async def post_intervention_response(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(user_request)
     is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
@@ -235,7 +235,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
     print(mark)
     return inter_response_create
 
-@router.get("/intervention_requests/quote/{intervention_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+@router.get("/intervention_requests/quote/{intervention_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Intervention"])
 async def get_intervention(intervention_id: int, user_request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(user_request)
     is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
@@ -247,7 +247,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     print(mark_as_read)
     return result
 
-@router.post("/intervention_requests", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+@router.post("/intervention_requests", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["Intervention"])
 async def intervention_request(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     inter_data = await request.json()
