@@ -358,10 +358,12 @@ class UserRepo:
     
     async def unsubscribe(db: Session, user_id: int):
         try:
-            unsubscribe = db.query(model.User).filter(model.User.id == user_id).update({model.User.subscription_at: None,
-                                                                                        model.User.subscription_expired: True})
+            user = db.query(model.User).filter(model.User.id == user_id).first()
+            user.subscription_at = None
+            db.add(user)
             db.commit()
-            return unsubscribe
+            db.refresh(user)
+            return user
         except Exception as e:
             print("UserRepo Exception:", e)
             db.rollback()

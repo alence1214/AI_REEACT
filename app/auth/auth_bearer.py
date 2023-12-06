@@ -2,6 +2,7 @@ from database import get_db
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from app.stripe_manager.stripe_manager import StripeManager
 from .auth_handler import decodeJWT
 
 class JWTBearer(HTTPBearer):
@@ -65,8 +66,8 @@ class SubscriptionBearer(HTTPBearer):
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(SubscriptionBearer, self).__call__(request)
         if credentials:
-            is_admin: bool = await self.check_subscription(credentials.credentials)
-            if not is_admin:
+            is_subscribed: bool = await self.check_subscription(credentials.credentials)
+            if not is_subscribed:
                 raise HTTPException(403, detail="You are not Subscripbed!")
             return True
         else:
@@ -82,6 +83,6 @@ class SubscriptionBearer(HTTPBearer):
         
         if payload:
             subscription_at = payload["subscription_at"]
-            if subscription_at != None:
-                is_subscribed = True
+            subscription_status = await StripeManager.check_subscription(subscription_at)
+            return subscription_status
         return is_subscribed

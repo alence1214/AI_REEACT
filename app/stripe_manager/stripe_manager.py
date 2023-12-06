@@ -462,3 +462,15 @@ class StripeManager:
         except stripe.error.StripeError as e:
             print("StripeManger Exception:", e)
             return False
+    
+    async def check_subscription(subscription_id: str=None):
+        try:
+            if subscription_id == None:
+                return False
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            if subscription.status == "active":
+                return True
+            return False
+        except stripe.error.StripeError as e:
+            print("Stripe check_subscription:", e)
+            return False

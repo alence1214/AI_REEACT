@@ -496,7 +496,10 @@ async def unsubscribe_signup(request: Request, db: Session=Depends(get_db)):
     update_user = await UserRepo.unsubscribe(db, user_id)
     if update_user == False:
         raise HTTPException(status_code=403, detail="Database Error!")
-    return "Successfully unsubscribed!"
+    jwt = signJWT(update_user.id, update_user.email, update_user.role, update_user.subscription_at)
+    return {
+        "jwt": jwt
+    }
 
 @router.get("/user/delete_keyword/{keyword_id}", dependencies=[Depends(JWTBearer()), Depends(SubscriptionBearer())], tags=["User"])
 async def delete_keyword_url(keyword_id: int, request: Request, db: Session=Depends(get_db)):

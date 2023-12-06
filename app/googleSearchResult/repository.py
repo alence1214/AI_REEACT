@@ -16,6 +16,7 @@ from app.intervention.model import InterventionRequest
 from app.intervention_response.model import InterventionResponse
 from app.alert.model import Alert
 from app.promo_code.model import PromoCode
+from app.stripe_manager.stripe_manager import StripeManager
 
 class GoogleSearchResult:
     
@@ -69,6 +70,17 @@ class GoogleSearchResult:
     
     async def get_analysis(db: Session, user_id: int):
         try:
+            # Define your custom sort order
+            custom_order = ["negative", "positive", "neutral"]
+
+            # Create a case statement to map the custom order to the column values
+            custom_sort = case(
+                [
+                    (SentimentResult.label == value, order) for order, value in enumerate(custom_order)
+                ],
+                else_=len(custom_order)
+            )
+            
             search_keywords = db.query(SearchIDList.keyword_url,
                                        SearchIDList.additional_keyword_url,
                                        SearchIDList.search_id).\
@@ -88,14 +100,30 @@ class GoogleSearchResult:
                                 join(SentimentResult, model.GoogleSearchResult.snippet == SentimentResult.keyword).\
                                 filter(and_(SearchIDList.user_id == user_id,
                                             model.GoogleSearchResult.search_id == search_keywords[0][2])).\
-                                order_by(model.GoogleSearchResult.ranking)
+                                order_by(custom_sort)
             positive_count = result.filter(SentimentResult.label == 'positive').count()
             negative_count = result.filter(SentimentResult.label == 'negative').count()
+            
+            final_result = []
+            user_data = db.query(User).filter(User.id == user_id).first()
+            subscription_status = await StripeManager.check_subscription(user_data.subscription_at)
+            if subscription_status == False:
+                pattern = r'[a-zA-Z]'
+                for data in result.all():
+                    data = dict(data)
+                    if data["label"] == 'positive' or data["label"] == 'negative':
+                        data["title"] = re.sub(pattern, '*', data["title"])
+                        data["link"] = re.sub(pattern, '*', data["link"])
+                        data["snippet"] = re.sub(pattern, '*', data["snippet"])
+                    final_result.append(data)
+            else:
+                final_result = result.all()
+            
             return {
                 "positive_count": positive_count,
                 "negative_count": negative_count,
                 "keyword_urls": search_keywords,
-                "result": result.all()
+                "result": final_result
             }
         except Exception as e:
             print("Get Analysis Data Exception:", e)
@@ -138,7 +166,8 @@ class GoogleSearchResult:
                                 filter(SearchIDList.user_id == user_id).all()
             final_result = []
             user_data = db.query(User).filter(User.id == user_id).first()
-            if user_data.subscription_at == None:
+            subscription_status = await StripeManager.check_subscription(user_data.subscription_at)
+            if subscription_status == False:
                 pattern = r'[a-zA-Z]'
                 for data in result.all():
                     data = dict(data)
