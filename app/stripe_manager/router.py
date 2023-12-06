@@ -63,7 +63,7 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     # await StripeManager.set_default_payment_method(user_data.stripe_id, new_payment_method.stripe_id)
     
     subscription_status = await StripeManager.check_subscription(user_data.subscription_at)
-    if subscription_status == False:
+    if subscription_status:
         raise HTTPException(status_code=403, detail="User already subscribed.")
     
     subscription_for_signup = await StripeManager.pay_for_monthly_usage(user_data.stripe_id, promo_code)
