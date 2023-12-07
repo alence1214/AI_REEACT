@@ -131,9 +131,9 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
         raise HTTPException(status_code=403, detail=subscription_for_new_keywordurl)
     
     confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_new_keywordurl.latest_invoice)
-    if type(confirm_invoice_payment) == str:
+    if type(confirm_invoice_payment) == str and confirm_invoice_payment != "Invoice is already paid":
         await StripeManager.cancel_subscription(subscription_for_new_keywordurl.stripe_id)
-        raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
+        raise HTTPException(status_code=400, detail="Invoice payment for New Keyword/URL Failed.")
     
     invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_new_keywordurl.stripe_id, user_id)
     if type(invoice_data) == str:
