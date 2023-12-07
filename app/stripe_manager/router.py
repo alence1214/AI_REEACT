@@ -68,14 +68,14 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     
     subscription_for_signup = await StripeManager.pay_for_monthly_usage(user_data.stripe_id, promo_code)
     if type(subscription_for_signup) == str:
-        await StripeManager.delete_customer(user_data.stripe_id)
+        # await StripeManager.delete_customer(user_data.stripe_id)
         raise HTTPException(status_code=400, detail="Subscription creation for Sign Up Failed.")
     
     confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_signup.latest_invoice)
     print(confirm_invoice_payment)
     if type(confirm_invoice_payment) == str and confirm_invoice_payment != "Invoice is already paid":
         await StripeManager.cancel_subscription(subscription_for_signup.stripe_id)
-        await StripeManager.delete_customer(user_data.stripe_id)
+        # await StripeManager.delete_customer(user_data.stripe_id)
         raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
     
     updated_user = await UserRepo.update_subscription(db, subscription_for_signup.stripe_id, user_data.id)
