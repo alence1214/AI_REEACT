@@ -1,5 +1,6 @@
 import time, datetime
 import pandas as pd
+from decouple import config
 
 from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -90,10 +91,10 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
         <body>
             <h2>Bonjour {result.email}</h2>
             <p>Reeact vous invite à rejoindre votre interface d’analyse via le lien ci dessous :</p>
-            <p><a href="https://app.reeact.io/forgot-password?token={token}">Reset Password!</a></p>
+            <p><a href="{config("SITE_URL")}/forgot-password?token={token}">Reset Password!</a></p>
             <p>Voici votre identifiant de connexion :</p>
             <p>{result.email}</p>
-            <img src="https://app.reeact.io/static/logoblue.png" alt="Reeact"></img>
+            <img src="{config("SITE_URL")}/static/logoblue.png" alt="Reeact"></img>
         </body>
     </html>
     """
@@ -304,7 +305,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
             <p>Nous sommes impatients de travailler avec vous et de vous offrir le meilleur service possible.</p>
             <p>Si vous avez des questions ou des besoins spécifiques, n'hésitez pas à nous contacter.</p>
             <p>Bonne analyse!<br/>L’équipe Reeact</p>
-            <img src="https://app.reeact.io/static/logoblue.png" alt="Reeact"></img>
+            <img src="{config("SITE_URL")}/static/logoblue.png" alt="Reeact"></img>
         </body>
     </html>
     """
@@ -369,7 +370,7 @@ async def password_forgot(email: str, db: Session=Depends(get_db)):
         <body>
             <p>Bonjour!</p>
             <p>Si cette demande ne vous appartient pas, veuillez ignorer ce message.</p>
-            <p>S'il vous plaît allez à <a href="https://app.reeact.io/forgot-password?token={token}">réinitialiser le mot de passe</a>.</p>
+            <p>S'il vous plaît allez à <a href="{config("SITE_URL")}/forgot-password?token={token}">réinitialiser le mot de passe</a>.</p>
             <p>Veuillez saisir le code du site !</p>
         </body>
     </html>
