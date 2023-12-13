@@ -75,8 +75,7 @@ async def set_default_card(request: Request, db: Session=Depends(get_db)):
     
     card_stripe_id = await UserPaymentRepo.get_stripe_id(db, card_id)
     
-    subscription_id = await UserRepo.get_subscription_id(db, user_id)
-    customer_id = await StripeManager.get_cus_id_from_sub_id(subscription_id)
+    customer_id = await UserRepo.get_user_stripe_id(db, user_id)
     
     set_default_payment_method = await StripeManager.set_default_payment_method(customer_id, card_stripe_id)
     if not set_default_payment_method:
