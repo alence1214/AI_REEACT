@@ -236,16 +236,16 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     # payment_data = request_data['payment_data']
     
     email_verify_token = request_data["email_verify_token"] if "email_verify_token" in request_data else None
-    if email_verify_token == None:
-        raise HTTPException(status_code=400, detail="No Email Verify Token.")
-    email_verify_payload = decode_email_verify_JWT(email_verify_token)
-    if email_verify_payload == False:
-        raise HTTPException(status_code=400, detail="Invalid Token!")
-    if user_data["email"] != email_verify_payload["email"]:
-        raise HTTPException(status_code=400, detail="Token doesn't match.")
-    verify_result = await EmailVerifyRepo.check_verify_code(db, email_verify_payload["email"], email_verify_payload["verify_code"])
-    if verify_result != True:
-        raise HTTPException(status_code=400, detail=verify_result)
+    # if email_verify_token == None:
+    #     raise HTTPException(status_code=400, detail="No Email Verify Token.")
+    # email_verify_payload = decode_email_verify_JWT(email_verify_token)
+    # if email_verify_payload == False:
+    #     raise HTTPException(status_code=400, detail="Invalid Token!")
+    # if user_data["email"] != email_verify_payload["email"]:
+    #     raise HTTPException(status_code=400, detail="Token doesn't match.")
+    # verify_result = await EmailVerifyRepo.check_verify_code(db, email_verify_payload["email"], email_verify_payload["verify_code"])
+    # if verify_result != True:
+    #     raise HTTPException(status_code=400, detail=verify_result)
     
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
