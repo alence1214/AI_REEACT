@@ -66,6 +66,15 @@ class UserRepo:
             db.rollback()
             return False
     
+    async def delete_user(db: Session, user_id: int):
+        try:
+            user = db.query(model.User).filter(model.User.id == user_id).delete()
+            db.commit()
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            db.rollback()
+            return False
+    
     async def get_all_user(db: Session):
         try:
             user = db.query(model.User.id,

@@ -264,6 +264,7 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     
     created_user = await UserRepo.create(db=db, user=user_data)
     if created_user == False:
+        await StripeManager.delete_customer(new_customer.stripe_id)
         raise HTTPException(status_code=403, detail="User Creation is Failed!")
     
     created_user_alert_setting = await AlertSettingRepo.create(db, {"user_id": created_user.id})
@@ -294,7 +295,19 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     if user_data["keyword_url"] != '':
         gs_result = await get_google_search_analysis(db, created_user.id, user_data["keyword_url"], 0, 100)
         if gs_result == False:
-            raise HTTPException(status_code=403, detail="gs_result Creation is Failed!")
+            await UserRepo.delete_user(db, created_user.id)
+            await StripeManager.delete_customer(new_customer.stripe_id)
+            raise HTTPException(status_code=403, detail="Google Search Result Creation is Failed!")
+    
+    gs_statistics = await GoogleSearchResult.get_reputation_score(db, created_user.id)
+    cronhistory_data = {
+        "user_id": created_user.id,
+        "total_search_result": gs_statistics.get("total_count"),
+        "positive_search_result": gs_statistics.get("positive_count"),
+        "negative_search_result": gs_statistics.get("negative_count")
+    }
+    new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
+    # await EmailVerifyRepo.delete(db, created_user.email)
     
     jwt = signJWT(created_user.id, user_data['email'], created_user.role, created_user.subscription_at)
     welcome_msg = f"""
@@ -309,15 +322,6 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         </body>
     </html>
     """
-    gs_statistics = await GoogleSearchResult.get_reputation_score(db, created_user.id)
-    cronhistory_data = {
-        "user_id": created_user.id,
-        "total_search_result": gs_statistics.get("total_count"),
-        "positive_search_result": gs_statistics.get("positive_count"),
-        "negative_search_result": gs_statistics.get("negative_count")
-    }
-    new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
-    await EmailVerifyRepo.delete(db, created_user.email)
     await send_email(created_user.email, "Bienvenue sur Reeact!", welcome_msg)
     
     return {
