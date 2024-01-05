@@ -42,8 +42,8 @@ class MessageRepo:
                               Messaging.analysis_selection,
                               Messaging.updated_at,
                               Messaging.user_read_status,
-                              Messaging.admin_read_status).\
-                        join(User, User.id == Messaging.user_id).\
+                                Messaging.admin_read_status).\
+                            join(User, User.id == Messaging.user_id).\
                         filter(Messaging.parent_id == -1).\
                         order_by(Messaging.updated_at.desc()).all()
             return result

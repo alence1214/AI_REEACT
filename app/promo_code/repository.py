@@ -13,6 +13,7 @@ class PromoCodeRepo:
                                       amount=promo_code["amount"],
                                       start_at=promo_code["start_at"],
                                       end_at=promo_code["end_at"],
+                                      useage=0,
                                       stripe_id=promo_code["stripe_id"])
             db.add(db_promo_code)
             db.commit()
@@ -40,6 +41,18 @@ class PromoCodeRepo:
         except Exception as e:
             print("PromoCode Exception:", e)
             return str(e)
+        
+    async def increase_useage(db: Session, promo_id: str):
+        try:
+            promocode = db.query(PromoCode).filter(PromoCode.code_title == promo_id).first()
+            setattr(promocode, "useage", promocode.useage + 1)
+            db.add(promocode)
+            db.commit()
+            db.refresh(promocode)
+        except Exception as e:
+            print("PromoCode Exception:", e)
+            db.rollback()
+            return False
         
     async def delete_by_id(db: Session, promo_id: int):
         try:

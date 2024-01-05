@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.orm import Session
 from sqlalchemy import select, or_, and_, extract
 from . import model, schema
@@ -326,13 +327,29 @@ class InterventionRepo:
             print("Exception in InterventionRepo:", e)
             db.rollback()
             return False
-        
+    
+    async def get_invoice_id(db: Session, inter_id: int):
+        try:
+            inter_res = db.query(InterventionResponse).\
+                            filter(and_(InterventionResponse.request_id == inter_id,
+                                        InterventionResponse.response_type == 1)).\
+                            order_by(InterventionResponse.updated_at.asc()).first()
+            if inter_res == None:
+                return False
+            invoice_id = json.loads(inter_res.response)["quote"]
+            return invoice_id
+        except Exception as e:
+            print("Exception in InterventionRepo:", e)
+            return False
+    
     async def update_status(db: Session, intervention_id: int, status: int):
         try:
             inter = db.query(model.InterventionRequest).\
-                filter(model.InterventionRequest.id == intervention_id).\
-                update({model.InterventionRequest.status: status})
+                filter(model.InterventionRequest.id == intervention_id).first()
+            setattr(inter, "status", status)
+            db.add(inter)
             db.commit()
+            db.refresh(inter)
             return inter
         except Exception as e:
             print("Exception in InterventionRepo:", e)
@@ -512,7 +529,8 @@ class InterventionRepo:
         try:
             inter_response = db.query(InterventionResponse).\
                                 filter(and_(InterventionResponse.request_id == intervention_id,
-                                            InterventionResponse.response_type == 1)).first()
+                                            InterventionResponse.response_type == 1,
+                                            InterventionResponse.status != 3)).first()
             if inter_response == None:
                 return False
             return True

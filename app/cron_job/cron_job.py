@@ -6,7 +6,7 @@ from decouple import config
 from serpapi import GoogleSearch
 from sqlalchemy import and_
 
-from tools import analysis_sentiment
+from tools import analysis_sentiment, send_email
 
 from app.user.model import User
 from app.googleSearchResult.model import GoogleSearchResult
@@ -15,7 +15,7 @@ from app.searchid_list.model import SearchIDList
 
 from app.googleSearchResult.repository import GoogleSearchResult as GoogleSearchResultRepo
 from app.sentimentResult.repository import SentimentResult as SentimentResultRepo
-from app.alert.repository import AlertRepo
+from app.alert.repository import AlertRepo, AlertSettingRepo
 from app.cron_job.repository import CronHistoryRepo
 
 weather_api_key = config("Weather_Key")
@@ -56,29 +56,40 @@ class CronJob:
                 new_search_id = new_search_result.get("search_metadata")["id"]
                 
                 count = 0
+                googleSearchResult_list = []
                 while(count < 100):
                     try:
                         new_organic_result = new_organic_results[count]
                     except:
                         continue
+                    new_sentiment_result = analysis_sentiment(f"{new_organic_result['title']} {new_organic_result['snippet'] if 'snippet' in new_organic_result else 'Unknown!'}")
                     googleSearchResult = {
                         "search_id": new_search_id,
                         "title": new_organic_result["title"],
                         "link": new_organic_result["link"],
                         "snippet": new_organic_result["snippet"] if "snippet" in new_organic_result else "Unknown!",
-                        "ranking": count
-                    }
-                    new_sentiment_result = analysis_sentiment(f"{googleSearchResult['title']} {googleSearchResult['snippet']}")
-                    sentimentResult = {
-                        "keyword": googleSearchResult["snippet"],
+                        "ranking": count,
+                        "keyword": new_organic_result["snippet"] if "snippet" in new_organic_result else "Unknown!",
                         "label": new_sentiment_result["label"],
                         "score": str(new_sentiment_result["score"])
                     }
+                    googleSearchResult_list.append(googleSearchResult)
+                    cnt += 1
+                
+                label_order = ["Negative", "Positive", "Neutral"]
+
+                googleSearchResult_list = sorted(googleSearchResult_list, 
+                                                key=lambda k: label_order.index(k["label"]))
+                
+                for i, googleSearchResult in enumerate(googleSearchResult_list):
+                    googleSearchResult["ranking"] = i
+                    sentimentResult = {
+                        "search_id": new_search_id,
+                        "label": googleSearchResult["label"],
+                        "score": googleSearchResult["score"],
+                    }
                     createdNewGoogleSearchResult = await GoogleSearchResultRepo.create(db, googleSearchResult)
                     createdNewSentimentResult = await SentimentResultRepo.create(db, sentimentResult)
-                    if createdNewGoogleSearchResult != False and createdNewSentimentResult != False:
-                        print(createdNewGoogleSearchResult, createdNewSentimentResult)
-                        count = count + 1
                     print(createdNewGoogleSearchResult, createdNewSentimentResult)
                     if createdNewGoogleSearchResult == "Google Search Result item saved successfully!":
                         new_alert = {
@@ -91,6 +102,7 @@ class CronJob:
                         created_alert = await AlertRepo.create(db, new_alert)
                         if created_alert != False:
                             alert_cnt += 1
+                
                 try:
                     db.query(GoogleSearchResult).filter(GoogleSearchResult.search_id == search_id_list_item.search_id).delete()
                     db.commit()
@@ -101,6 +113,14 @@ class CronJob:
                 except Exception as e:
                     db.rollback()
                     continue
+            alert_setting = await AlertSettingRepo.get_alert_setting(db, user.id)
+            if alert_cnt > 0 and alert_setting.email:
+                email_content = """
+                    <h1>New Alerts</h1>
+                    <p>Des nouvelles alertes sont remontées sur votre compte Reeact,</p>
+                    <p>rendez-vous sur votre plateforme pour les visualiser.</p>
+                """
+                send_email(user.email, "Nouvelle alertes", email_content)
             db_googleSearch = db.query(GoogleSearchResult).\
                                 join(SearchIDList, GoogleSearchResult.search_id == SearchIDList.search_id).\
                                 join(SentimentResult, GoogleSearchResult.snippet == SentimentResult.keyword).\

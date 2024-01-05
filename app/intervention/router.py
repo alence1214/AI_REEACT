@@ -33,7 +33,7 @@ async def get_all_interventions(db: Session=Depends(get_db)):
 async def get_inter_request_data(inter_id: int, db: Session=Depends(get_db)):
     inter_data = await InterventionRepo.get_inter_by_id(db, inter_id)
     if inter_data == False or inter_data == None:
-        raise HTTPException(status_code=403, detail="Intervention DB error.")
+        raise HTTPException(status_code=403, detail="Erreur d'intervention de la base de données.")
     mark_as_read = await InterventionRepo.update_read_status(db, inter_id, True, True)
     print(mark_as_read)
     return {
@@ -51,7 +51,7 @@ async def get_all_interventions(req_type: str=Path(...), inter_type: str=Query(d
         result = await InterventionRepo.get_monthly_intervention_data(db, inter_type)
     
     if result == False:
-        raise HTTPException(status_code=403, detail="Intervention DB error.")
+        raise HTTPException(status_code=403, detail="Erreur d'intervention de la base de données.")
     
     return result
         
@@ -192,7 +192,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     user_id = get_user_id(user_request)
     is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
     if not is_valid_intervention_request:
-        raise HTTPException(status_code=403, detail="Invaild request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     
     result = await InterventionResponseRepo.get_information_by_request_id(db, intervention_id)
     
@@ -205,7 +205,7 @@ async def post_intervention_response(intervention_id: int, user_request: Request
     user_id = get_user_id(user_request)
     is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
     if not is_valid_intervention_request:
-        raise HTTPException(status_code=403, detail="Invaild request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     
     res_data = await user_request.json()
     
@@ -240,7 +240,7 @@ async def get_intervention(intervention_id: int, user_request: Request, db: Sess
     user_id = get_user_id(user_request)
     is_valid_intervention_request = await InterventionRepo.check_valid_user(db, user_id, intervention_id)
     if not is_valid_intervention_request:
-        raise HTTPException(status_code=403, detail="Invaild request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     
     result = await InterventionResponseRepo.get_quote_by_request_id(db, intervention_id)
     mark_as_read = await InterventionRepo.update_read_status(db, intervention_id, False, True)
@@ -259,7 +259,7 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     }
     check_request_status = await GoogleSearchResult.check_request_status(db, inter_data["id"])
     if check_request_status == False:
-        raise HTTPException(status_code=403, detail="Request already sent!")
+        raise HTTPException(status_code=403, detail="Demande déjà envoyée !")
     result = await InterventionRepo.create(db, intervention_data, user_id)
     
     user_data = await UserRepo.get_user_by_id(db, user_id)
@@ -274,6 +274,26 @@ async def intervention_request(request: Request, db: Session=Depends(get_db)):
     alert_result = await AlertRepo.create(db, alert_data)
     print(alert_result)
     if result == False:
-        raise HTTPException(status_code=403, detail="InterventionRepo Creation Failed!")
+        raise HTTPException(status_code=403, detail="Échec de la création d'InterventionRepo !")
     request_status = await GoogleSearchResult.update_request_status(db, inter_data["id"], True)
     return result
+
+@router.get("/intervention/refuse/{inter_id}", dependencies=[Depends(JWTBearer())], tags=["Intervention"])
+async def refuse_intervention_invoice(inter_id: int, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    is_valid = await InterventionRepo.check_valid_user(db, user_id, inter_id)
+    if is_valid == False:
+        raise HTTPException(status_code=403, detail="Vous n'avez pas la permission de procéder à cette intervention.")
+    
+    invoice_id = await InterventionRepo.get_invoice_id(db, inter_id)
+    if invoice_id == False:
+        raise HTTPException(status_code=403, detail="Impossible d'obtenir l'identifiant de la facture.")
+    
+    update_status = await InterventionRepo.update_status(db, inter_id, 5)
+    update_invoice = await InvoiceRepo.update_status(db, invoice_id, "Refused")
+    
+    if update_status == False or update_invoice == False:
+        raise HTTPException(status_code=403, detail="Échec du refus de la facture !")
+    return {
+        "result": "Refused"
+    }

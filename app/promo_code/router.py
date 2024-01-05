@@ -19,7 +19,7 @@ async def create_promocode(request: Request, db: Session=Depends(get_db)):
     promocode = await request.json()
     new_promo = await StripeManager.create_promo_code(promocode)
     if new_promo == None:
-        raise HTTPException(status_code=403, detail="Pomo Code ID is None")
+        raise HTTPException(status_code=403, detail="L'ID du code promotionnel est Aucun")
     new_promo_data = {
         "code_title": new_promo.code,
         "method": promocode["method"],
@@ -37,11 +37,11 @@ async def delete_promocode(request: Request, db: Session=Depends(get_db)):
     promo_id = req_data["promo_id"]
     promo_stripe_id = await PromoCodeRepo.get_stripe_id(db, promo_id)
     if promo_stripe_id == False:
-        raise HTTPException(status_code=403, detail='Promotion Code DB error.')
+        raise HTTPException(status_code=403, detail='Erreur de base de données du code promotionnel.')
     stripe_res = await StripeManager.delete_promocode(promo_stripe_id)
     if stripe_res == False:
-        raise HTTPException(status_code=403, detail='Promotion Code Stripe error.')
+        raise HTTPException(status_code=403, detail='Erreur de bande de code promotionnel.')
     result = await PromoCodeRepo.delete_by_id(db, promo_id)
     if result == False:
-        raise HTTPException(status_code=403, detail='Promotion Code is not deleted.')
+        raise HTTPException(status_code=403, detail="Le code promotionnel n'est pas supprimé.")
     return result

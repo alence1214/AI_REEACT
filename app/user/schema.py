@@ -30,6 +30,7 @@ class UserBase(BaseModel):
     user_type: Optional[str] = "Particulier"
     stripe_id: Optional[str] = None
     forgot_password_token: Optional[str] = None
+    activated: Optional[bool] = True
     
 class UserCreate(UserBase):
     pass

@@ -20,10 +20,10 @@ async def confirm(request: Request, db: Session=Depends(get_db)):
     username = req_data["username"]
     result = await UserRepo.fetch_by_email(db, email)
     if result:
-        raise HTTPException(status_code=400, detail="Email already exists!")
+        raise HTTPException(status_code=400, detail="L'adresse e-mail existe déjà!")
     result = await UserRepo.fetch_by_username(db, username)
     if result:
-        raise HTTPException(status_code=400, detail="Username already exists!")
+        raise HTTPException(status_code=400, detail="Le nom d'utilisateur existe déjà!")
     verify_code = str(random.randint(100000, 999999))
     emailverify = {
         "email": email,
@@ -31,7 +31,7 @@ async def confirm(request: Request, db: Session=Depends(get_db)):
     }
     result = await EmailVerifyRepo.create(db, emailverify)
     if result == False:
-        raise HTTPException(status_code=400, detail="Email Verify Code Create Failed!")
+        raise HTTPException(status_code=400, detail="Échec de la création du code de vérification par e-mail!")
     return {
         "email": email
     }
@@ -42,7 +42,7 @@ async def confirm(request: Request, db: Session=Depends(get_db)):
     email = req_data["email"]
     result = await UserRepo.fetch_by_email(db, email)
     if result:
-        raise HTTPException(status_code=400, detail="Email already exists!")
+        raise HTTPException(status_code=400, detail="L'adresse e-mail existe déjà!")
     verify_code = str(random.randint(100000, 999999))
     emailverify = {
         "email": email,
@@ -50,7 +50,7 @@ async def confirm(request: Request, db: Session=Depends(get_db)):
     }
     result = await EmailVerifyRepo.create(db, emailverify)
     if result == False:
-        raise HTTPException(status_code=400, detail="Email Verify Code Create Failed!")
+        raise HTTPException(status_code=400, detail="Échec de la création du code de vérification par e-mail!")
     return {
         "email": email
     }
@@ -61,7 +61,7 @@ async def confirm_email(request: Request, db: Session=Depends(get_db)):
     email = req_data["email"]
     result = await UserRepo.fetch_by_email(db, email)
     if result:
-        raise HTTPException(status_code=400, detail="Email already exists!")
+        raise HTTPException(status_code=400, detail="L'adresse e-mail existe déjà!")
     return email
 
 @router.post("/confirm_username", dependencies=[Depends(JWTBearer())], tags=["User"])
@@ -70,14 +70,14 @@ async def confirm_username(request: Request, db: Session=Depends(get_db)):
     username = req_data["username"]
     result = await UserRepo.fetch_by_username(db, username)
     if result:
-        raise HTTPException(status_code=400, detail="Username already exists!")
+        raise HTTPException(status_code=400, detail="Le nom d'utilisateur existe déjà!")
     return username
 
 @router.get("/send_verify_code/{email}", tags=["User"])
 async def send_verify_code(email: str, db: Session=Depends(get_db)):
     verify_code = await EmailVerifyRepo.get_verify_code(db, email)
     if verify_code == False:
-        raise HTTPException(status_code=400, detail="Email Verify Code Not Exist!")
+        raise HTTPException(status_code=400, detail="Le code de vérification par e-mail n'existe pas!")
     subject = "Vérification de l'E-mail!"
     email_body = f"""
     <html>
@@ -91,7 +91,7 @@ async def send_verify_code(email: str, db: Session=Depends(get_db)):
     """
     send_result = await send_email(email, subject, email_body)
     if send_result == False:
-        raise HTTPException(status_code=400, detail="Email Not Sent!")
+        raise HTTPException(status_code=400, detail="L'e-mail n'a pas été envoyé !")
     return True
 
 @router.post("/verify_code", tags=["User"])
@@ -121,7 +121,7 @@ async def email_setting_verify(request: Request, db: Session=Depends(get_db)):
     token = email_verify_JWT(email, verify_code)
     add_token = await UserRepo.add_forgot_password_token(db, user_id, token)
     if add_token == False:
-        raise HTTPException(status_code=400, detail="Add Token Failed.")
+        raise HTTPException(status_code=400, detail="Échec de l'ajout de jeton.")
     return {
         "token": token
     }

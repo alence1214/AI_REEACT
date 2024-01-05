@@ -27,25 +27,24 @@ async def get_message_by_id(msg_id: int, db: Session=Depends(get_db)):
     print(result)
     return result
 
-@router.post("/admin/messaging", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Messaging"])
-async def post_new_message(request: Request, db: Session=Depends(get_db)):
-    user_id = get_user_id(request)
+@router.post("/admin/send_message/{user_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Messaging"])
+async def post_new_message(user_id: int, request: Request, db: Session=Depends(get_db)):
     message_data = await request.json()
     creation_data = {
         "analysis_selection": message_data["analysis_selection"],
         "object_for": message_data["object_for"],
         "messaging": message_data["messaging"],
-        "attachments": message_data["upload_files"],
+        "attachments": message_data["upload_files"] if "upload_files" in message_data else None,
         "parent_id": -1,
         "user_id": user_id,
-        "message_to": 1
+        "message_to": user_id
     }
     res = await MessageRepo.create(db, creation_data)
     if res != False:
-        await MessageRepo.mark_as_read(db, res.id, False)
+        await MessageRepo.mark_as_read(db, res.id, True)
     if res != False:
         for id, ws_conn in connected_clients:
-            if id != user_id:
+            if id == user_id:
                 await ws_conn.send_text("Admin send you message!")
     return res
 
@@ -55,7 +54,7 @@ async def post_new_message(request: Request, db: Session=Depends(get_db)):
     msg_id = req_data["message_id"]
     result = await MessageRepo.delete_message(db, msg_id)
     if result == False:
-        raise HTTPException(status_code=403, detail="Message is not deleted.")
+        raise HTTPException(status_code=403, detail="Le message n'est pas supprimé.")
     return result
 
 @router.post("/admin/messaging/{message_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Messaging"])
@@ -77,7 +76,7 @@ async def post_message(message_id: int, request: Request, db: Session=Depends(ge
     if res != False:
         for id, ws_conn in connected_clients:
             if id == message_data["message_to"]:
-                await ws_conn.send_text("Admin send you message!")
+                await ws_conn.send_text("L'administrateur vous envoie un message !")
                 break
     return res
 
@@ -158,7 +157,7 @@ async def get_message_history(message_id: int, request: Request, db: Session=Dep
     user_id = get_user_id(request)
     is_valid = await MessageRepo.check_valid_call(db, user_id, message_id)
     if not is_valid:
-        raise HTTPException(status_code=403, detail="Invalid Request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     res = await MessageRepo.get_message_history(db, message_id)
     if res != False:
         read_status = await MessageRepo.mark_as_read(db, message_id, False)
@@ -170,7 +169,7 @@ async def post_message(message_id: int, request: Request, db: Session=Depends(ge
     user_id = get_user_id(request)
     is_valid = await MessageRepo.check_valid_call(db, user_id, message_id)
     if not is_valid:
-        raise HTTPException(status_code=403, detail="Invalid Request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     message_data = await request.json()
     creation_data = {
         "analysis_selection": message_data["analysis_selection"],

@@ -53,7 +53,7 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     user_data = await UserRepo.get_user_by_id(db, user_id)
     
     if user_data == False:
-        raise HTTPException(status_code=403, detail="User not found.")
+        raise HTTPException(status_code=403, detail="Utilisateur non trouvé.")
         
     # new_payment_method = await StripeManager.link_payment_method_to_customer(user_data.stripe_id, payment_data.get("pm_id"))
 
@@ -64,19 +64,19 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     
     subscription_status = await StripeManager.check_subscription(user_data.subscription_at)
     if subscription_status:
-        raise HTTPException(status_code=403, detail="User already subscribed.")
+        raise HTTPException(status_code=403, detail="Utilisateur déjà abonné.")
     
     subscription_for_signup = await StripeManager.pay_for_monthly_usage(user_data.stripe_id, promo_code)
     if type(subscription_for_signup) == str:
         # await StripeManager.delete_customer(user_data.stripe_id)
-        raise HTTPException(status_code=400, detail="Subscription creation for Sign Up Failed.")
+        raise HTTPException(status_code=400, detail="Échec de la création de l'abonnement pour l'inscription.")
     
     confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_signup.latest_invoice)
     print(confirm_invoice_payment)
     if type(confirm_invoice_payment) == str and confirm_invoice_payment != "Invoice is already paid":
         await StripeManager.cancel_subscription(subscription_for_signup.stripe_id)
         # await StripeManager.delete_customer(user_data.stripe_id)
-        raise HTTPException(status_code=400, detail="Invoice payment for Sign Up Failed.")
+        raise HTTPException(status_code=400, detail="Échec du paiement de la facture pour l'inscription.")
     
     updated_user = await UserRepo.update_subscription(db, subscription_for_signup.stripe_id, user_data.id)
     
@@ -86,7 +86,12 @@ async def pay_for_signup(request: Request, db: Session=Depends(get_db)):
     
     result = await InvoiceRepo.create(db, invoice_data)
     if result == False:
-        raise HTTPException(status_code=403, detail="InvoiceRepo Creation is Failed!")
+        raise HTTPException(status_code=403, detail="La création d’InvoiceRepo a échoué !")
+    
+    increase_promo_useage = await PromoCodeRepo.increase_useage(db, promo_code)
+    if increase_promo_useage == False:
+        raise HTTPException(status_code=403, detail="La création de PromoCodeRepo a échoué !")
+    
     jwt = signJWT(updated_user.id, updated_user.email, updated_user.role, updated_user.subscription_at)
     return {
         "jwt": jwt,
@@ -123,7 +128,7 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     new_keywordurl = req_data["new_keywordurl"]
     check_duplicate = await SearchIDListRepo.check_keyword_duplicate(db, user_id, new_keywordurl)
     if not check_duplicate:
-        raise HTTPException(status_code=403, detail="This keyword already exists.")
+        raise HTTPException(status_code=403, detail="Ce mot-clé existe déjà.")
     
     customer_id = await UserRepo.get_user_stripe_id(db, user_id)
     subscription_for_new_keywordurl = await StripeManager.pay_for_new_keywordurl(customer_id)
@@ -133,7 +138,7 @@ async def pay_for_new_keywordurl(request: Request, db: Session=Depends(get_db)):
     confirm_invoice_payment = await StripeManager.pay_for_invoice(subscription_for_new_keywordurl.latest_invoice)
     if type(confirm_invoice_payment) == str and confirm_invoice_payment != "Invoice is already paid":
         await StripeManager.cancel_subscription(subscription_for_new_keywordurl.stripe_id)
-        raise HTTPException(status_code=400, detail="Invoice payment for New Keyword/URL Failed.")
+        raise HTTPException(status_code=400, detail="Échec du paiement de la facture pour le nouveau mot clé/URL.")
     
     invoice_data = await StripeManager.create_invoice_data_from_subscription_id(subscription_for_new_keywordurl.stripe_id, user_id)
     if type(invoice_data) == str:
@@ -221,12 +226,12 @@ async def check_promocode(request: Request, db: Session=Depends(get_db)):
     try:
         promo_code = await PromoCodeRepo.get_promocode_by_title(db, code_title)
         if promo_code == False:
-            raise HTTPException(status_code=403, detail="Can't get data from DB.")
+            raise HTTPException(status_code=403, detail="Impossible d'obtenir des données de DB.")
         if promo_code == "Promocode doesn't exist.":
             raise HTTPException(status_code=403, detail=promo_code)
         check_promo_code = await StripeManager.check_promo_code(promo_code.stripe_id)
         if not check_promo_code:
-            raise HTTPException(status_code=400, detail="Promotion code is not vailde!")
+            raise HTTPException(status_code=400, detail="Le code promotionnel n'est pas valide !")
         return promo_code
     except Exception as e:
         print("Promocode Exception:", e)

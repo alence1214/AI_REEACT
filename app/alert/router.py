@@ -16,7 +16,7 @@ router = APIRouter()
 async def get_admin_alert_data(request: Request, db: Session=Depends(get_db)):
     alert_data = await AlertRepo.get_admin_alert(db)
     if alert_data == False:
-        raise HTTPException(status_code=403, detail="Alert database error.")
+        raise HTTPException(status_code=403, detail="Erreur de base de données.")
     return {
         "alert_data": alert_data
     }
@@ -36,7 +36,7 @@ async def get_alert_data(request: Request, db: Session=Depends(get_db)):
     print(f"{marked_as_read} Alerts are marked as read.")
     print(alert_data)
     if alert_data == False:
-        raise HTTPException(status_code=403, detail="Alert database error.")
+        raise HTTPException(status_code=403, detail="Erreur de base de données.")
     return {
         "alert_data": alert_data
     }
@@ -46,7 +46,7 @@ async def get_alert_data(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     alert_setting_data = await AlertSettingRepo.get_alert_setting(db, user_id)
     if alert_setting_data == False:
-        raise HTTPException(status_code=403, detail="Alert database error.")
+        raise HTTPException(status_code=403, detail="Erreur de base de données.")
     return {
         "alert_setting": alert_setting_data
     }
@@ -58,7 +58,7 @@ async def change_alert_setting(request: Request, db: Session=Depends(get_db)):
     alert_setting_data = req_data["alert_setting_data"]
     result = await AlertSettingRepo.update_setting(db, user_id, alert_setting_data)
     if result == False:
-        raise HTTPException(status_code=403, detail="Alert database error.")
+        raise HTTPException(status_code=403, detail="Erreur de base de données.")
     return result
    
 @router.get("/get_unread", dependencies=[Depends(JWTBearer())], tags=["Alert"])

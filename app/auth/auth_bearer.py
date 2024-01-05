@@ -13,12 +13,12 @@ class JWTBearer(HTTPBearer):
         credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
         if credentials:
             if not credentials.scheme == "Bearer":
-                raise HTTPException(status_code=403, detail="Invalid authentication scheme.")
+                raise HTTPException(status_code=403, detail="Schéma d'authentification invalide.")
             if not self.verify_jwt(credentials.credentials):
-                raise HTTPException(status_code=403, detail="Invalid token or expired token.")
+                raise HTTPException(status_code=403, detail="Jeton invalide ou jeton expiré.")
             return credentials.credentials
         else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+            raise HTTPException(status_code=403, detail="Code d'autorisation invalide.")
 
     def verify_jwt(self, jwtoken: str) -> bool:
         isTokenValid: bool = False
@@ -40,10 +40,10 @@ class UserRoleBearer(HTTPBearer):
         if credentials:
             is_admin: bool = await self.check_user_role(credentials.credentials)
             if not is_admin:
-                raise HTTPException(403, detail="You are not Administrator!")
+                raise HTTPException(403, detail="Vous n'êtes pas administrateur !")
             return True
         else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+            raise HTTPException(status_code=403, detail="Code d'autorisation invalide.")
             
     async def check_user_role(self, jwttoken: str) -> bool:
         is_admin: bool = False
@@ -68,10 +68,10 @@ class SubscriptionBearer(HTTPBearer):
         if credentials:
             is_subscribed: bool = await self.check_subscription(credentials.credentials)
             if not is_subscribed:
-                raise HTTPException(403, detail="You are not Subscripbed!")
+                raise HTTPException(403, detail="Vous n'êtes pas abonné!")
             return True
         else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+            raise HTTPException(status_code=403, detail="Code d'autorisation invalide.")
             
     async def check_subscription(self, jwttoken: str) -> bool:
         is_subscribed: bool = False

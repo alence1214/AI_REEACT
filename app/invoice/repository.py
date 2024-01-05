@@ -39,6 +39,19 @@ class InvoiceRepo:
             db.rollback()
             return False
     
+    async def update_status(db: Session, invoice_id: int, status: str):
+        try:
+            invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+            setattr(invoice, "status", status)
+            db.add(invoice)
+            db.commit()
+            db.refresh(invoice)
+            return invoice
+        except Exception as e:
+            print("InvoiceRepo Exception:", e)
+            db.rollback()
+            return False
+    
     async def get_all_invoices(db: Session):
         try:
             result = db.query(Invoice.id,

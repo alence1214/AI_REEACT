@@ -52,9 +52,9 @@ class EmailVerifyRepo:
         try:
             db_email_verify = db.query(EmailVerify).filter(EmailVerify.email == email).first()
             if db_email_verify == None:
-                return "Email doesn't exist."
+                return "L'adresse e-mail n'existe pas."
             if db_email_verify.verify_code != verify_code:
-                return "Invalid Verify Code."
+                return "Code de vérification invalide."
             cur_time = datetime.datetime.now()
             verify_time = db_email_verify.created_at
             time_delta = cur_time - verify_time
@@ -65,7 +65,7 @@ class EmailVerifyRepo:
                     update({EmailVerify.verify_code: new_verify_code,
                             EmailVerify.created_at: cur_time})
                 db.commit()
-                return "Verify Code Expired."
+                return "Code de vérification expiré."
             return True
         except Exception as e:
             print("Getting Verify Code Failed:", e)

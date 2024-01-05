@@ -3,13 +3,13 @@ venv/
 env/
 **/__pycache__
 .vscode
+.env
 Pipfile*
 *.pem
 *.key
 *.crt
-main.py
-main80.py
 database.py
 tools.py
-local_env_backup
-test_env_backup
+local_env
+live_env
+test_env

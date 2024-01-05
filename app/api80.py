@@ -3,7 +3,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.alert.router import router as alert_router
@@ -22,8 +21,8 @@ from app.websocket.ws import router as websocket_router
 from app.cron_job.cron_job import CronJob
 from app.websocket.ws import connected_clients
 
-# app = FastAPI(docs_url=None, redoc_url=None)
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
+# app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/build", StaticFiles(directory="build"), name='frontent')
@@ -34,9 +33,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
-app.add_middleware(
-    HTTPSRedirectMiddleware
 )
 
 app.include_router(alert_router)

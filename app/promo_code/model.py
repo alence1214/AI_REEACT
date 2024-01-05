@@ -10,4 +10,5 @@ class PromoCode(Base):
     amount = Column(Float)
     start_at = Column(DateTime)
     end_at = Column(DateTime)
+    useage = Column(Integer)
     stripe_id = Column(String(80), nullable=False, index=True, unique=True)

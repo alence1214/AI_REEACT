@@ -352,7 +352,7 @@ class StripeManager:
                     if payment_intent.last_payment_error != None:
                         print(payment_intent.last_payment_error.message)
                         return payment_intent.last_payment_error.code
-                return "Payment Failed"
+                return "Paiement échoué"
             
             for data in invoice.lines.data:
                 product_id = data.price.product

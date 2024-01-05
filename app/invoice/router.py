@@ -45,6 +45,13 @@ async def get_invoice_by_id(invoice_id: int, db: Session=Depends(get_db)):
         raise HTTPException(status_code=403, detail="Database Error.")
     return result
 
+@router.get("/admin/refund_invoice/{invoice_id}", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=['Admin', 'Invoice'])
+async def refund_invoice_by_id(invoice_id: int, db: Session=Depends(get_db)):
+    result = await InvoiceRepo.update_status(db, invoice_id, "Refunded")
+    if result == False:
+        raise HTTPException(status_code=403, detail="Database Error.")
+    return result
+
 @router.post("/admin/invoices/download", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "Invoice"])
 async def admin_download_invoices(request: Request, db: Session=Depends(get_db)):
     req_data = await request.json()
@@ -76,14 +83,14 @@ async def get_invoice_quote(invoice_id: int, request: Request, db: Session=Depen
     user_id = get_user_id(request)
     is_valid_invoice_request = await InvoiceRepo.check_right_request(db, invoice_id, user_id)
     if not is_valid_invoice_request:
-        raise HTTPException(status_code=403, detail="Invaild request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     
     quote = await InvoiceRepo.get_quote(db, invoice_id)
     if quote == False:
-        raise HTTPException(status_code=403, detail="Cannot Get Invoice data.")
+        raise HTTPException(status_code=403, detail="Impossible d'obtenir les données de la facture.")
     card_data = await UserPaymentRepo.get_default_card(db, user_id)
     if not card_data:
-        raise HTTPException(status_code=403, detail="Cannot Get Payment data.")
+        raise HTTPException(status_code=403, detail="Impossible d'obtenir les données de paiement.")
     return {
         "quote": quote,
         "card_data": card_data
@@ -110,7 +117,7 @@ async def user_download_invoices(request: Request, db: Session=Depends(get_db)):
     req_data = await request.json()
     invoice_ids = req_data["invoice_ids"]
     if len(invoice_ids) == 0:
-        raise HTTPException(status_code=403, detail="Please select Invoices!")
+        raise HTTPException(status_code=403, detail="Veuillez sélectionner Factures !")
     cur_data = int(datetime.datetime.now().timestamp())
     zipfile_path = f"static/invoices/zipfiles/{len(invoice_ids)}_invoices_{str(cur_data)}.zip"
     
@@ -121,7 +128,7 @@ async def user_download_invoices(request: Request, db: Session=Depends(get_db)):
             invoice_paths.append(invoice_path)
     
     if len(invoice_paths) == 0:
-        raise HTTPException(status_code=403, detail="No Invoice Found!")
+        raise HTTPException(status_code=403, detail="Aucune facture trouvée !")
     zip_files(invoice_paths, zipfile_path)
     return zipfile_path
 

@@ -25,7 +25,7 @@ async def add_additional_keyword_url(request: Request, db: Session=Depends(get_d
     additional_keyword_url = req_data["additional_keyword_url"]
     
     if additional_keyword_url == "" or additional_keyword_url == None:
-        raise HTTPException(status_code=403, detail="No additional keyword or url.")
+        raise HTTPException(status_code=403, detail="Aucun mot-clé ou URL supplémentaire.")
     
     old_search_id = await SearchIDListRepo.get_search_id(db, user_id, keyword_url)
     
@@ -42,28 +42,40 @@ async def add_additional_keyword_url(request: Request, db: Session=Depends(get_d
     new_search_id = new_search_result.get("search_metadata")["id"]
     count = 0
     alert_cnt = 0
+    googleSearchResult_list = []
     while(count < 100):
         try:
             new_organic_result = new_organic_results[count]
         except:
             break
+        new_sentiment_result = analysis_sentiment(f"{new_organic_result['title']} {new_organic_result['snippet'] if 'snippet' in new_organic_result else 'Unknown!'}")
         googleSearchResult = {
             "search_id": new_search_id,
             "title": new_organic_result["title"],
             "link": new_organic_result["link"],
             "snippet": new_organic_result["snippet"] if "snippet" in new_organic_result else "Unknown!",
-            "ranking": count
-        }
-        new_sentiment_result = analysis_sentiment(f"{googleSearchResult['title']} {googleSearchResult['snippet']}")
-        sentimentResult = {
-            "keyword": googleSearchResult["snippet"],
+            "ranking": count,
+            "keyword": new_organic_result["snippet"] if "snippet" in new_organic_result else "Unknown!",
             "label": new_sentiment_result["label"],
             "score": str(new_sentiment_result["score"])
         }
+        googleSearchResult_list.append(googleSearchResult)
+        count = count + 1
+
+    label_order = ["negative", "positive", "neutral"]
+
+    googleSearchResult_list = sorted(googleSearchResult_list, 
+                                    key=lambda k: label_order.index(k["label"]))
+    
+    for i, googleSearchResult in enumerate(googleSearchResult_list):
+        googleSearchResult["ranking"] = i
+        sentimentResult = {
+            "keyword": googleSearchResult["keyword"],
+            "label": googleSearchResult["label"],
+            "score": googleSearchResult["score"]
+        }
         createdNewGoogleSearchResult = await GoogleSearchResult.create(db, googleSearchResult)
         createdNewSentimentResult = await SentimentResult.create(db, sentimentResult)
-        if createdNewGoogleSearchResult != False and createdNewSentimentResult != False:
-            count = count + 1
         if createdNewGoogleSearchResult == "Google Search Result item saved successfully!":
             new_alert = {
                 "user_id": user_id,
@@ -128,7 +140,7 @@ async def analysis_ranking_change(request: Request, db: Session=Depends(get_db))
     result = await GoogleSearchResult.change_rank(db, user_id, changed_id, changed_rank)
     
     if result == "Invalid request":
-        raise HTTPException(status_code=403, detail=result)
+        raise HTTPException(status_code=403, detail="Requête invalide.")
     
     return result
 
@@ -166,3 +178,14 @@ async def admin_search_contents(keyword: str, db: Session=Depends(get_db)):
     if search_result == False:
         raise HTTPException(status_code=403, detail="DB Error!")
     return search_result
+
+@router.post("/change_search_result", dependencies=[Depends(JWTBearer())], tags=["GoogleSearch"])
+async def chage_search_result(request: Request, db: Session=Depends(get_db)):
+    req_data = await request.json()
+    gs_id = req_data["gs_id"]
+    action = req_data["action"]
+    
+    change_result = await GoogleSearchResult.change_search_result(db, gs_id, action)
+    if change_result == False:
+        raise HTTPException(status_code=403, detail="DB Error!")
+    return change_result

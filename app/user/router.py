@@ -67,12 +67,14 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
     user_data = request_data["user_data"]
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
-        raise HTTPException(status_code=400, detail="User already exists!")
+        raise HTTPException(status_code=400, detail="L'utilisateur existe déjà!")
     db_user = await UserRepo.fetch_by_username(db, username=user_data['full_name'])
     if db_user:
-        raise HTTPException(status_code=400, detail="Username already exists!")
+        raise HTTPException(status_code=400, detail="Ce nom d'utilisateur existe déjà!")
 
     result = await UserRepo.create(db, user_data)
+    if result == False:
+        raise HTTPException(status_code=400, detail="Échec de la création de l'utilisateur !")
     
     payload = {
         "user_id": result.id,
@@ -84,16 +86,16 @@ async def create_new_user(request: Request, db: Session=Depends(get_db)):
 
     add_token = await UserRepo.add_forgot_password_token(db, result.id, token)
     if add_token == False:
-        raise HTTPException(status_code=400, detail="Add Token Failed.")
+        raise HTTPException(status_code=400, detail="Échec de l'ajout du jeton.")
     
     welcome_msg = f"""
     <html>
         <body>
-            <h2>Bonjour {result.email}</h2>
+            <h2>Bonjour {result.full_name}</h2>
             <p>Reeact vous invite à rejoindre votre interface d’analyse via le lien ci dessous :</p>
             <p><a href="{config("SITE_URL")}/forgot-password?token={token}">Reset Password!</a></p>
             <p>Voici votre identifiant de connexion :</p>
-            <p>{result.email}</p>
+            <p>{result.email}</p>x
             <img src="{config("SITE_URL")}/static/logoblue.png" alt="Reeact"></img>
         </body>
     </html>
@@ -111,6 +113,20 @@ async def get_user_by_id(user_id: int, db: Session=Depends(get_db)):
         "keyword_url_data": keyword_url_data
     }
 
+@router.post("/admin/activate_user", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "User"])
+async def activate_user(request: Request, db: Session=Depends(get_db)):
+    req_data = await request.json()
+    user_id = req_data['user_id']
+    is_activate = req_data['activated']
+    if user_id == None or is_activate == None:
+        raise HTTPException(status_code=403, detail="Erreur de données de demande !")
+    res = await UserRepo.activate_user(db, user_id, is_activate)
+    if res == False:
+        raise HTTPException(status_code=403, detail="DB Error!")
+    return {
+        "result": True
+    }
+
 @router.get("/admin/setting", dependencies=[Depends(JWTBearer()), Depends(UserRoleBearer())], tags=["Admin", "User"])
 async def get_my_user_data(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
@@ -126,14 +142,14 @@ async def update_my_user_data(user_data: userSchema.UserUpdate, request: Request
     if origin_user_data.full_name != user_data.full_name:
         check_username = await UserRepo.fetch_by_username(db, user_data.full_name)
         if check_username:
-            raise HTTPException(status_code=403, detail="Username already exist.")
+            raise HTTPException(status_code=403, detail="Nom d'utilisateur existe déjà.")
     if origin_user_data.email != user_data.email:
         check_email = await UserRepo.fetch_by_email(db, user_data.email)
         if check_email:
-            raise HTTPException(status_code=403, detail="Email already exist.")
+            raise HTTPException(status_code=403, detail="L'e-mail existe déjà.")
         check_token = await UserRepo.check_password_forgot_token(db, token)
         if check_token == False:
-            raise HTTPException(status_code=403, detail="Invalid Token")
+            raise HTTPException(status_code=403, detail="jeton invalide")
     result = await UserRepo.update_user_by_id(db, user_data, user_id)
     return result
 
@@ -249,23 +265,23 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     
     db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
     if db_user:
-        raise HTTPException(status_code=400, detail="Email already exists!")
+        raise HTTPException(status_code=400, detail="L'email existe déjà!")
     db_user = await UserRepo.fetch_by_username(db, username=user_data['full_name'])
     if db_user:
-        raise HTTPException(status_code=400, detail="Username already exists!")
+        raise HTTPException(status_code=400, detail="Ce nom d'utilisateur existe déjà!")
     user_data["email_verified"] = True
     user_data["payment_verified"] = False
     
     new_customer = await StripeManager.create_customer(user_data)
     if new_customer == None:
-        raise HTTPException(status_code=400, detail="Stripe Customer Creation is Failed!")
+        raise HTTPException(status_code=400, detail="La création du client Stripe a échoué !")
     
     user_data["stripe_id"] = new_customer.stripe_id
     
     created_user = await UserRepo.create(db=db, user=user_data)
     if created_user == False:
         await StripeManager.delete_customer(new_customer.stripe_id)
-        raise HTTPException(status_code=403, detail="User Creation is Failed!")
+        raise HTTPException(status_code=403, detail="La création de l'utilisateur a échoué !")
     
     created_user_alert_setting = await AlertSettingRepo.create(db, {"user_id": created_user.id})
     
@@ -297,16 +313,16 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
         if gs_result == False:
             await UserRepo.delete_user(db, created_user.id)
             await StripeManager.delete_customer(new_customer.stripe_id)
-            raise HTTPException(status_code=403, detail="Google Search Result Creation is Failed!")
+            raise HTTPException(status_code=403, detail="La création des résultats de recherche Google a échoué !")
     
-    gs_statistics = await GoogleSearchResult.get_reputation_score(db, created_user.id)
-    cronhistory_data = {
-        "user_id": created_user.id,
-        "total_search_result": gs_statistics.get("total_count"),
-        "positive_search_result": gs_statistics.get("positive_count"),
-        "negative_search_result": gs_statistics.get("negative_count")
-    }
-    new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
+    # gs_statistics = await GoogleSearchResult.get_reputation_score(db, created_user.id)
+    # cronhistory_data = {
+    #     "user_id": created_user.id,
+    #     "total_search_result": gs_statistics.get("total_count"),
+    #     "positive_search_result": gs_statistics.get("positive_count"),
+    #     "negative_search_result": gs_statistics.get("negative_count")
+    # }
+    # new_cronhistory = await CronHistoryRepo.create(db, cronhistory_data)
     # await EmailVerifyRepo.delete(db, created_user.email)
     
     jwt = signJWT(created_user.id, user_data['email'], created_user.role, created_user.subscription_at)
@@ -324,11 +340,27 @@ async def create_user(user_request: Request, db: Session = Depends(get_db)):
     """
     await send_email(created_user.email, "Bienvenue sur Reeact!", welcome_msg)
     
+    admin_maile_content = f"""
+    <html>
+        <body>
+            <h2>Bonjour!</h2>
+            <p>Un nouvel utilisateur s’est inscrit sur votre plateforme, voici les informations d’inscriptions :</p>
+            <p>{created_user.full_name}</p>
+            <p>{created_user.email}</p>
+            <p>Merci!<br/>L’équipe Reeact</p>
+            <img src="{config("SITE_URL")}/static/logoblue.png" alt="Reeact"></img>
+        </body>
+    </html>
+    """
+    admin_list = await UserRepo.get_admins_data(db)
+    for admin in admin_list:
+        await send_email(admin.email, "Nouveau utilisateur", admin_maile_content)
+    
     return {
         "user": created_user,
         "jwt": jwt,
         "gs_result": gs_result,
-        "new_cronhistory": new_cronhistory
+        # "new_cronhistory": new_cronhistory
     }
 
 @router.post("/user/login", tags=["User"])
@@ -337,7 +369,7 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
         Login User with Email and Password
     """
     db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
-    if db_user != "User not exist" and db_user != "Password is not correct" and db_user != False:
+    if db_user != "L'utilisateur n'existe pas!" and db_user != "Le mot de passe n'est pas correct!" and db_user != "L'utilisateur est suspendu." and db_user != False:
         # if db_user.role == 2 and db_user.subscription_at == None:
         #     create_date = datetime.datetime.strptime(db_user.created_at, "%Y-%m-%d").date()
         #     unsubscribe_date = datetime.datetime.strptime(db_user.updated_at, "%Y-%m-%d").date()
@@ -361,7 +393,7 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
 async def password_forgot(email: str, db: Session=Depends(get_db)):
     email_confirm = await UserRepo.fetch_by_email(db, email)
     if not email_confirm:
-        raise HTTPException(status_code=403, detail="User does not exist.")
+        raise HTTPException(status_code=403, detail="L'utilisateur n'existe pas.")
     payload = {
         "user_id": email_confirm.id,
         "email": email,
@@ -381,10 +413,10 @@ async def password_forgot(email: str, db: Session=Depends(get_db)):
     """
     add_token = await UserRepo.add_forgot_password_token(db, email_confirm.id, token)
     if add_token == False:
-        raise HTTPException(status_code=400, detail="Add Token Failed.")
+        raise HTTPException(status_code=400, detail="Échec de l'ajout du jeton.")
     send_result = await send_email(email, "Réinitialiser le mot de passe!", email_body)
     if send_result == False:
-        raise HTTPException(status_code=400, detail="Email Not Sent!")
+        raise HTTPException(status_code=400, detail="E-mail non envoyé !")
     return "Email sent successfully!"
 
 @router.post("/password_forgot", tags=["User"])
@@ -393,7 +425,7 @@ async def check_password_forgot_token(request: Request, db: Session=Depends(get_
     token = req_data["token"]
     check_token = await UserRepo.check_password_forgot_token(db, token)
     if check_token == False:
-        raise HTTPException(status_code=403, detail="Invalid Token")
+        raise HTTPException(status_code=403, detail="jeton invalide")
     return True
 
 @router.post("/change_password", tags=["user"])
@@ -405,18 +437,18 @@ async def change_password(request: Request, db: Session=Depends(get_db)):
     
     check_token = await UserRepo.check_password_forgot_token(db, token)
     if check_token == False:
-        raise HTTPException(status_code=403, detail="Invalid Token")
+        raise HTTPException(status_code=403, detail="jeton invalide")
     
     user_id = payload["user_id"] if "user_id" in payload else None
     if user_id == None:
-        raise HTTPException(status_code=403, detail="Invalid Token")
+        raise HTTPException(status_code=403, detail="jeton invalide")
     user = userSchema.UserUpdate(forgot_password_token=" ",
                                 password=password,
                                 email=payload["email"],
                                 full_name=payload["full_name"])
     change_password = await UserRepo.update_user_by_id(db, user, user_id)
     if change_password == False:
-        raise HTTPException(status_code=403, detail="Password Update Failed.")
+        raise HTTPException(status_code=403, detail="Échec de la mise à jour du mot de passe.")
     return "Password updated successfully."
 
 @router.get("/user/dashboard", dependencies=[Depends(JWTBearer())], tags=["Dashboard"])
@@ -465,14 +497,14 @@ async def update_my_user_data(user_data: userSchema.UserUpdate, request: Request
     if origin_user_data.full_name != user_data.full_name:
         check_username = await UserRepo.fetch_by_username(db, user_data.full_name)
         if check_username:
-            raise HTTPException(status_code=403, detail="Username already exist.")
+            raise HTTPException(status_code=403, detail="Nom d'utilisateur existe déjà.")
     if origin_user_data.email != user_data.email:
         check_email = await UserRepo.fetch_by_email(db, user_data.email)
         if check_email:
-            raise HTTPException(status_code=403, detail="Email already exist.")
+            raise HTTPException(status_code=403, detail="L'e-mail existe déjà.")
         check_token = await UserRepo.check_password_forgot_token(db, token)
         if check_token == False:
-            raise HTTPException(status_code=403, detail="Invalid Token")
+            raise HTTPException(status_code=403, detail="jeton invalide")
     result = await UserRepo.update_user_by_id(db, user_data, user_id)
     return result
 
@@ -511,10 +543,10 @@ async def delete_keyword_url(keyword_id: int, request: Request, db: Session=Depe
     user_id = get_user_id(request)
     valid_keyword = await SearchIDListRepo.check_valid(db, user_id, keyword_id)
     if valid_keyword == False:
-        raise HTTPException(status_code=403, detail="Invalid Request!")
+        raise HTTPException(status_code=403, detail="Requête invalide!")
     subscription_id = await SearchIDListRepo.get_subscription_id(db, keyword_id)
     if subscription_id == False or subscription_id == None:
-        raise HTTPException(status_code=403, detail="Cannot remove this keyword.")
+        raise HTTPException(status_code=403, detail="Impossible de supprimer ce mot-clé.")
     unsubscribe = await StripeManager.unsubscribe(subscription_id)
     if unsubscribe == False:
         raise HTTPException(status_code=403, detail="Stripe Error!")

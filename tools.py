@@ -109,28 +109,39 @@ async def get_google_search_analysis(db: Session, user_id: int, search_keyword: 
             
             organic_results = search_result.get('organic_results')
             count = 0
+            googleSearchResult_list = []
             while(count < num):
                 try:
                     organic_result = organic_results[count]
                 except:
-                    break
+                    continue
+                sentiment_result = analysis_sentiment(f"{organic_result['title']} {organic_result['snippet'] if 'snippet' in organic_result else 'Unknown!'}")
                 googleSearchResult = {
                     "search_id": search_id,
                     "title": organic_result["title"],
                     "link": organic_result["link"],
                     "snippet": organic_result["snippet"] if "snippet" in organic_result else "Unknown!",
-                    "ranking": count
-                }
-                sentiment_result = analysis_sentiment(f"{googleSearchResult['title']} {googleSearchResult['snippet']}")
-                sentimentResult = {
-                    "keyword": googleSearchResult["snippet"],
+                    "ranking": count,
+                    "keyword": organic_result["snippet"] if "snippet" in organic_result else "Unknown!",
                     "label": sentiment_result["label"],
                     "score": str(sentiment_result["score"])
                 }
+                googleSearchResult_list.append(googleSearchResult)
+            
+            label_order = ["Negative", "Positive", "Neutral"]
+
+            googleSearchResult_list = sorted(googleSearchResult_list, 
+                                            key=lambda k: label_order.index(k["label"]))
+            
+            for i, googleSearchResult in enumerate(googleSearchResult_list):
+                googleSearchResult["ranking"] = i
+                sentimentResult = {
+                    "search_id": search_id,
+                    "label": googleSearchResult["label"],
+                    "score": googleSearchResult["score"]
+                }
                 createdSentimentResult = await SentimentResult.create(db=db, sentimentResult=sentimentResult)
                 createdGoogleSearchResult = await GoogleSearchResult.create(db=db, googleSearchResult=googleSearchResult)
-                if createdGoogleSearchResult != False and createdSentimentResult != False:
-                    count = count + 1
             
             searchid_list = {
                 "user_id": user_id,

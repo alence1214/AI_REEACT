@@ -100,7 +100,7 @@ class GoogleSearchResult:
                                 join(SentimentResult, model.GoogleSearchResult.snippet == SentimentResult.keyword).\
                                 filter(and_(SearchIDList.user_id == user_id,
                                             model.GoogleSearchResult.search_id == search_keywords[0][2])).\
-                                order_by(custom_sort)
+                                order_by(model.GoogleSearchResult.ranking)
             positive_count = result.filter(SentimentResult.label == 'positive').count()
             negative_count = result.filter(SentimentResult.label == 'negative').count()
             
@@ -156,7 +156,7 @@ class GoogleSearchResult:
                                 join(SearchIDList, model.GoogleSearchResult.search_id == SearchIDList.search_id).\
                                 join(SentimentResult, model.GoogleSearchResult.snippet == SentimentResult.keyword).\
                                 where(and_(SearchIDList.user_id == user_id, SearchIDList.search_id == search_id)).\
-                                order_by(custom_sort)
+                                order_by(model.GoogleSearchResult.ranking)
             positive_count = result.filter(SentimentResult.label == 'positive').count()
             negative_count = result.filter(SentimentResult.label == 'negative').count()
             
@@ -210,12 +210,14 @@ class GoogleSearchResult:
                     filter(and_(model.GoogleSearchResult.search_id == search_id, 
                         model.GoogleSearchResult.ranking == i)).first()
                 setattr(res_, "ranking", i+rank_change)
+                db.add(res_)
                 db.commit()
                 db.refresh(res_)
             
             res = db.query(model.GoogleSearchResult).\
                 filter(model.GoogleSearchResult.id == changed_id).first()
             setattr(res, "ranking", changed_rank)
+            db.add(res)
             db.commit()
             db.refresh(res)
         except Exception as e:
@@ -422,4 +424,23 @@ class GoogleSearchResult:
                 return True
         except Exception as e:
             print("check_request_status", e)
+            return False
+    
+    async def change_search_result(db: Session, gs_id: int, action: str):
+        try:
+            if action == 'remove':
+                db.query(model.GoogleSearchResult).filter(model.GoogleSearchResult.id == gs_id).delete()
+                db.commit()
+                return "removed"
+            else:
+                gs_item = db.query(model.GoogleSearchResult).filter(model.GoogleSearchResult.id == gs_id).first()
+                sentiment = db.query(SentimentResult).filter(SentimentResult.keyword == gs_item.snippet).first()
+                setattr(sentiment, "label", action)
+                db.add(sentiment)
+                db.commit()
+                db.refresh(sentiment)
+                return gs_item
+        except Exception as e:
+            print("change_search_result", e)
+            db.rollback()
             return False
