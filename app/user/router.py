@@ -37,7 +37,7 @@ async def get_all_user(db: Session = Depends(get_db)):
         _type_: _description_
     """
     
-    db_all_users = await UserRepo.get_all_user(db)
+    db_all_users = await UserRepo.get_all_user_table(db)
     user_count = len(db_all_users)
     active_user_count = await UserRepo.get_active_user_count(db)
     intervention_count = await InterventionRepo.get_all_count(db)
@@ -54,9 +54,9 @@ async def get_all_user(db: Session = Depends(get_db)):
 async def get_specific_users(req_type: str, db: Session=Depends(get_db)):
     result = None
     if req_type == "active_accounts":
-        result = await UserRepo.get_active_users(db)
+        result = await UserRepo.get_active_user_table(db)
     else:
-        result = await UserRepo.get_all_user(db)
+        result = await UserRepo.get_all_user_table(db)
     return {
         "user_data": result
     }

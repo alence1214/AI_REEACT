@@ -2,6 +2,7 @@ from sqlalchemy import extract, or_, and_
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from . import model, schema
+from app.searchid_list.model import SearchIDList
 import datetime
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -100,6 +101,25 @@ class UserRepo:
             print("UserRepo Exception:", e)
             return False
     
+    async def get_all_user_table(db: Session):
+        try:
+            users = db.query(model.User).all()
+            for user in users:
+                print(user)
+                subscription_str = ""
+                if user.subscription_at:
+                    subscription_str += "Pack: 29€\n"
+                keyword_urls = db.query(SearchIDList).filter(SearchIDList.user_id == user.id).all()
+                if len(keyword_urls) > 0:
+                    subscription_str += "Additional Keyword/URLs:\n"
+                    for keyword_url in keyword_urls:
+                        subscription_str += f"\t{keyword_url.keyword_url}: 10€\n"
+                user.subscription_at = subscription_str
+            return users
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            return False
+    
     async def get_customers(db: Session):
         try:
             user = db.query(model.User.id,
@@ -137,6 +157,25 @@ class UserRepo:
                         model.User.subscription_at).\
                         filter(model.User.subscription_at != None).all()
             return user
+        except Exception as e:
+            print("UserRepo Exception:", e)
+            return False
+    
+    async def get_active_user_table(db: Session):
+        try:
+            users = db.query(model.User).\
+                        filter(model.User.subscription_at != None).all()
+            for user in users:
+                subscription_str = ""
+                if user.subscription_at:
+                    subscription_str += "Pack: 29€\n"
+                keyword_urls = db.query(SearchIDList).filter(SearchIDList.user_id == user.id).all()
+                if len(keyword_urls) > 0:
+                    subscription_str += "Additional Keyword/URLs:\n"
+                    for keyword_url in keyword_urls:
+                        subscription_str += f"\t{keyword_url.keyword_url}: 10€\n"
+                user.subscription_at = subscription_str
+            return users
         except Exception as e:
             print("UserRepo Exception:", e)
             return False
