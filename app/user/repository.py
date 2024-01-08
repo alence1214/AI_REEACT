@@ -108,12 +108,14 @@ class UserRepo:
                 print(user)
                 subscription_str = ""
                 if user.subscription_at:
-                    subscription_str += "Pack: 29€\n"
+                    subscription_str += "Paquet: 29 €\n"
+                else:
+                    subscription_str += "Paquet: 0 €\n"
                 keyword_urls = db.query(SearchIDList).filter(SearchIDList.user_id == user.id).all()
                 if len(keyword_urls) > 0:
-                    subscription_str += "Additional Keyword/URLs:\n"
+                    subscription_str += "Mots-clés/URL supplémentaires:\n"
                     for keyword_url in keyword_urls:
-                        subscription_str += f"\t{keyword_url.keyword_url}: 10€\n"
+                        subscription_str += f"\t{keyword_url.keyword_url}: 10 €\n"
                 user.subscription_at = subscription_str
             return users
         except Exception as e:
@@ -168,10 +170,12 @@ class UserRepo:
             for user in users:
                 subscription_str = ""
                 if user.subscription_at:
-                    subscription_str += "Pack: 29€\n"
+                    subscription_str += "Paquet: 29 €\n"
+                else:
+                    subscription_str += "Paquet: 0 €\n"
                 keyword_urls = db.query(SearchIDList).filter(SearchIDList.user_id == user.id).all()
                 if len(keyword_urls) > 0:
-                    subscription_str += "Additional Keyword/URLs:\n"
+                    subscription_str += "Mots-clés/URL supplémentaires:\n"
                     for keyword_url in keyword_urls:
                         subscription_str += f"\t{keyword_url.keyword_url}: 10€\n"
                 user.subscription_at = subscription_str
